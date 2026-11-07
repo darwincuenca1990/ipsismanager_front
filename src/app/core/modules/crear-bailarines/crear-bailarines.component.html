@@ -1,0 +1,103 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="dancer-form">
+	<div *ngIf="enviado && form.invalid" class="alert alert-warning" role="alert">
+		Completa los campos obligatorios marcados con * y revisa el correo electrónico.
+	</div>
+	<section class="form-section">
+		<h3>Datos del bailarín</h3>
+		<div class="form-grid">
+			<label><span class="field-label">Cédula <span class="required-mark">*</span></span><input class="form-control" formControlName="cedula" [attr.maxlength]="limites.cedula" autocomplete="off"><small class="character-counter">{{ caracteresUsados('cedula') }}/{{ limites.cedula }}</small></label>
+			<label><span class="field-label">Apellidos <span class="required-mark">*</span></span><input class="form-control" formControlName="apellidos" [attr.maxlength]="limites.apellidos"><small class="character-counter">{{ caracteresUsados('apellidos') }}/{{ limites.apellidos }}</small></label>
+			<label class="form-field"> <span class="field-label">Nombres <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres" [attr.maxlength]="limites.nombres"><small class="character-counter">{{ caracteresUsados('nombres') }}/{{ limites.nombres }}</small></label>
+			<label class="form-field"> <span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control" type="date" formControlName="fecha_nacimiento" (change)="actualizarElencoPorFecha()"></label>
+			<label class="form-field"> <span class="field-label">Elenco <span class="required-mark">*</span></span>
+				<select class="form-select" formControlName="elenco">
+					<option value="">Seleccione un elenco</option>
+					<option *ngFor="let opcion of opcionesElenco" [value]="opcion.value">{{ opcion.label }}</option>
+				</select>
+				<small class="field-hint">Se asigna automáticamente por edad: 5–13 Infantil, 14–27 Planta y mayores de 27 Máster. Puedes cambiarlo.</small>
+			</label>
+			<label>Lugar de nacimiento<input class="form-control" formControlName="lugar_nacimiento" [attr.maxlength]="limites.lugar_nacimiento"><small class="character-counter">{{ caracteresUsados('lugar_nacimiento') }}/{{ limites.lugar_nacimiento }}</small></label>
+			<label>Celular<input class="form-control" type="tel" inputmode="numeric" formControlName="celular" [attr.maxlength]="limites.celular" (input)="filtrarSoloNumeros($event)"><small class="character-counter" [class.character-counter-error]="form.controls.celular.invalid">{{ caracteresUsados('celular') }}/{{ limites.celular }} · solo números</small></label>
+			<label class="form-field">Correo electrónico<input class="form-control" type="email" formControlName="correo" [attr.maxlength]="limites.correo"><small class="character-counter" [class.character-counter-error]="form.controls.correo.invalid">{{ caracteresUsados('correo') }}/{{ limites.correo }}<ng-container *ngIf="form.controls.correo.invalid"> · formato inválido</ng-container></small></label>
+			<label class="form-field">Convive con
+				<select class="form-select" formControlName="vive_con">
+					<option value="">Seleccione</option>
+					<option value="PADRES">Padres</option>
+					<option value="FAMILIARES">Familiares</option>
+					<option value="OTROS">Otros</option>
+				</select>
+			</label>
+			<label class="wide">Dirección domiciliaria<input class="form-control" formControlName="direccion_domicilio" [attr.maxlength]="limites.direccion_domicilio"><small class="character-counter">{{ caracteresUsados('direccion_domicilio') }}/{{ limites.direccion_domicilio }}</small></label>
+			<label class="wide">Referencia domiciliaria<input class="form-control" formControlName="referencia_domicilio" [attr.maxlength]="limites.referencia_domicilio"><small class="character-counter">{{ caracteresUsados('referencia_domicilio') }}/{{ limites.referencia_domicilio }}</small></label>
+			<label class="wide">Fotografía<input class="form-control" type="file" accept="image/*" (change)="onFileChange($event)"></label>
+			<small *ngIf="fotografiaNombre" class="wide text-muted">Archivo seleccionado: {{ fotografiaNombre }}</small>
+		</div>
+		<div class="check-row">
+			<label><input type="checkbox" formControlName="estudia"> Estudia</label>
+			<label><input type="checkbox" formControlName="trabaja"> Trabaja</label>
+			<label><input type="checkbox" formControlName="padece_enfermedad"> Padece enfermedad</label>
+			<label><input type="checkbox" formControlName="autorizado_publicacion"> Autoriza publicación de fotografía</label>
+		</div>
+		<div class="form-grid extra-fields">
+			<label>Institución educativa<input class="form-control" formControlName="institucion_estudio" [attr.maxlength]="limites.institucion_estudio"><small class="character-counter">{{ caracteresUsados('institucion_estudio') }}/{{ limites.institucion_estudio }}</small></label>
+			<label>Lugar de trabajo<input class="form-control" formControlName="lugar_trabajo" [attr.maxlength]="limites.lugar_trabajo"><small class="character-counter">{{ caracteresUsados('lugar_trabajo') }}/{{ limites.lugar_trabajo }}</small></label>
+			<label>Fecha de autorización<input class="form-control" type="date" formControlName="fecha_autorizacion_publicacion"></label>
+			<label class="wide">Detalle de enfermedad<textarea class="form-control" formControlName="detalle_enfermedad" rows="2" [attr.maxlength]="limites.detalle_enfermedad"></textarea><small class="character-counter">{{ caracteresUsados('detalle_enfermedad') }}/{{ limites.detalle_enfermedad }}</small></label>
+		</div>
+	</section>
+
+	<section class="form-section" formGroupName="inscripcion">
+		<h3>Inscripción a la agrupación</h3>
+		<div class="form-grid">
+			<label class="form-field">
+				<span class="field-label">Fecha de ingreso a la agrupación <span class="required-mark">*</span></span>
+				<input class="form-control" type="date" formControlName="fecha_ingreso_agrupacion">
+			</label>
+			<label class="form-field">
+				<span class="field-label">Estado <span class="required-mark">*</span></span>
+				<select class="form-select" formControlName="estado">
+					<option value="ACTIVO">Activo</option>
+					<option value="INACTIVO">Inactivo</option>
+				</select>
+			</label>
+			<label class="wide">Motivo de ingreso
+				<textarea class="form-control" formControlName="motivo_ingreso_agrupacion" rows="3"></textarea>
+			</label>
+			<label class="form-field">Fecha de salida (opcional)
+				<input class="form-control" type="date" formControlName="fecha_salida">
+			</label>
+		</div>
+	</section>
+
+	<section class="form-section" formGroupName="grupo_familiar">
+		<h3>Grupo familiar y representante</h3>
+		<div class="form-grid">
+			<label>Apellidos del padre<input class="form-control" formControlName="apellidos_papa" [attr.maxlength]="limites.apellidos_papa" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('apellidos_papa') }}/{{ limites.apellidos_papa }}</small></label>
+			<label>Nombres del padre<input class="form-control" formControlName="nombres_papa" [attr.maxlength]="limites.nombres_papa" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('nombres_papa') }}/{{ limites.nombres_papa }}</small></label>
+			<label>Celular del padre<input class="form-control" type="tel" inputmode="numeric" formControlName="celular_papa" [attr.maxlength]="limites.celular_papa" (input)="filtrarCelularFamiliar($event, 'celular_papa')"><small class="character-counter" [class.character-counter-error]="form.controls.grupo_familiar.controls.celular_papa.invalid">{{ caracteresGrupoUsados('celular_papa') }}/{{ limites.celular_papa }} · solo números</small></label>
+			<label>Trabajo del padre<input class="form-control" formControlName="lugar_trabajo_papa" [attr.maxlength]="limites.lugar_trabajo_papa" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('lugar_trabajo_papa') }}/{{ limites.lugar_trabajo_papa }}</small></label>
+			<label>Apellidos de la madre<input class="form-control" formControlName="apellidos_mama" [attr.maxlength]="limites.apellidos_mama" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('apellidos_mama') }}/{{ limites.apellidos_mama }}</small></label>
+			<label>Nombres de la madre<input class="form-control" formControlName="nombres_mama" [attr.maxlength]="limites.nombres_mama" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('nombres_mama') }}/{{ limites.nombres_mama }}</small></label>
+			<label>Celular de la madre<input class="form-control" type="tel" inputmode="numeric" formControlName="celular_mama" [attr.maxlength]="limites.celular_mama" (input)="filtrarCelularFamiliar($event, 'celular_mama')"><small class="character-counter" [class.character-counter-error]="form.controls.grupo_familiar.controls.celular_mama.invalid">{{ caracteresGrupoUsados('celular_mama') }}/{{ limites.celular_mama }} · solo números</small></label>
+			<label>Trabajo de la madre<input class="form-control" formControlName="lugar_trabajo_mama" [attr.maxlength]="limites.lugar_trabajo_mama" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('lugar_trabajo_mama') }}/{{ limites.lugar_trabajo_mama }}</small></label>
+			<label class="wide">¿Quién será el representante?
+				<select class="form-select" [value]="representanteSeleccionado" (change)="seleccionarRepresentante($any($event.target).value)">
+					<option value="OTRO">Otra persona</option>
+					<option value="PAPA" [disabled]="!(form.get('grupo_familiar.apellidos_papa')?.value || form.get('grupo_familiar.nombres_papa')?.value)">Padre</option>
+					<option value="MAMA" [disabled]="!(form.get('grupo_familiar.apellidos_mama')?.value || form.get('grupo_familiar.nombres_mama')?.value)">Madre</option>
+				</select>
+			</label>
+			<label><span class="field-label">Representante <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres_completos_representante" maxlength="200" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
+			<label><span class="field-label">Celular del representante <span class="required-mark">*</span></span><input class="form-control" formControlName="celular_representante" maxlength="20" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
+			<label><span class="field-label">Parentesco <span class="required-mark">*</span></span><input class="form-control" formControlName="parentesco" maxlength="100" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
+			<label>Lugar de trabajo del representante<input class="form-control" formControlName="lugar_trabajo_representante" maxlength="200" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
+		</div>
+	</section>
+
+	<div class="form-actions">
+		<button type="button" class="btn btn-outline-secondary" [disabled]="guardando" (click)="cancelar.emit()">Cancelar</button>
+		<button type="submit" class="btn btn-primary" [disabled]="guardando">
+			{{ guardando ? 'Guardando…' : (bailarin ? 'Guardar cambios' : 'Crear bailarín') }}
+		</button>
+	</div>
+</form>

@@ -1,0 +1,119 @@
+<main class="dancers-page">
+	<header class="page-heading">
+		<div>
+			<p class="eyebrow">Administración</p>
+			<h1>Bailarines</h1>
+			<p class="subtitle">Consulta y administra la información de los integrantes.</p>
+		</div>
+		<button class="btn btn-primary add-button" type="button" (click)="nuevo()">
+			<i class="pi pi-plus" aria-hidden="true"></i>
+			Nuevo bailarín
+		</button>
+	</header>
+
+	<section class="list-card" aria-label="Listado de bailarines">
+		<div class="list-toolbar">
+			<div>
+				<h2>Listado</h2>
+				<span class="total-count">{{ bailarinesFiltrados.length }} registros</span>
+			</div>
+			<div class="list-filters">
+				<label class="elenco-filter">
+					<span>Elenco</span>
+					<select class="form-select" [(ngModel)]="filtroElenco" (ngModelChange)="cambiarFiltros()" aria-label="Filtrar por elenco">
+						<option value="TODOS">Todos los elencos</option>
+						<option *ngFor="let opcion of opcionesElenco" [value]="opcion.value">{{ opcion.label }}</option>
+					</select>
+				</label>
+				<fieldset class="state-filter">
+					<legend>Estado</legend>
+					<div class="btn-group state-toggle" role="group" aria-label="Filtrar por estado">
+						<input class="btn-check" type="radio" name="estadoBailarin" id="estado-activo" value="ACTIVO" [(ngModel)]="filtroEstado" (ngModelChange)="cambiarFiltros()">
+						<label class="btn state-option" for="estado-activo"><span class="state-indicator active-indicator"></span>Activos</label>
+						<input class="btn-check" type="radio" name="estadoBailarin" id="estado-inactivo" value="INACTIVO" [(ngModel)]="filtroEstado" (ngModelChange)="cambiarFiltros()">
+						<label class="btn state-option" for="estado-inactivo"><span class="state-indicator inactive-indicator"></span>Inactivos</label>
+					</div>
+				</fieldset>
+				<label class="search-box">
+					<i class="pi pi-search" aria-hidden="true"></i>
+					<input type="search" [(ngModel)]="busqueda" placeholder="Buscar por nombre o cédula" aria-label="Buscar bailarines">
+				</label>
+			</div>
+		</div>
+
+		<div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
+
+		<div class="table-scroll">
+			<table class="table dancer-table align-middle mb-0">
+				<thead>
+					<tr>
+						<th scope="col">Bailarín</th>
+						<th scope="col">Elenco</th>
+						<th scope="col">Estado</th>
+						<th scope="col">Cédula</th>
+						<th scope="col">Representante</th>
+						<th scope="col">Celular</th>
+						<th scope="col">Estudia</th>
+						<th scope="col">Trabaja</th>
+						<th scope="col" class="actions-heading">Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr *ngIf="cargando">
+						<td colspan="9" class="empty-state">Cargando bailarines…</td>
+					</tr>
+					<tr *ngFor="let bailarin of bailarinesFiltrados">
+						<td>
+							<div class="dancer-name">{{ bailarin.apellidos }} {{ bailarin.nombres }}</div>
+							<small class="muted">{{ bailarin.correo || 'Sin correo registrado' }}</small>
+						</td>
+						<td>{{ etiquetaElenco(bailarin.elenco) }}</td>
+						<td>
+							<span *ngIf="estadoBailarin(bailarin) as estado" class="status-pill" [class.status-yes]="estado === 'ACTIVO'" [class.status-inactive]="estado === 'INACTIVO'">
+								{{ estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+							</span>
+							<span *ngIf="!estadoBailarin(bailarin)" class="muted">Sin inscripción</span>
+						</td>
+						<td>{{ bailarin.cedula }}</td>
+						<td>{{ nombreRepresentante(bailarin) }}</td>
+						<td>{{ bailarin.celular || '—' }}</td>
+						<td><span class="status-pill" [class.status-yes]="bailarin.estudia">{{ bailarin.estudia ? 'Sí' : 'No' }}</span></td>
+						<td><span class="status-pill" [class.status-yes]="bailarin.trabaja">{{ bailarin.trabaja ? 'Sí' : 'No' }}</span></td>
+						<td class="actions-cell">
+							<button type="button" class="icon-action edit-action" (click)="editar(bailarin)" aria-label="Editar bailarín" title="Editar">
+								<i class="pi pi-pencil" aria-hidden="true"></i>
+							</button>
+							<button type="button" class="icon-action delete-action" (click)="eliminar(bailarin)" aria-label="Eliminar bailarín" title="Eliminar">
+								<i class="pi pi-trash" aria-hidden="true"></i>
+							</button>
+						</td>
+					</tr>
+					<tr *ngIf="!cargando && bailarinesFiltrados.length === 0">
+						<td colspan="9" class="empty-state">
+							{{ busqueda || filtroElenco !== 'TODOS' || filtroEstado !== 'ACTIVO' ? 'No hay bailarines que coincidan con los filtros.' : 'Todavía no hay bailarines activos registrados.' }}
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+</main>
+
+<div *ngIf="mostrarFormulario" class="modal-backdrop-custom" (click)="$event.stopPropagation()">
+	<section class="form-modal" role="dialog" aria-modal="true" [attr.aria-label]="bailarinSeleccionado ? 'Editar bailarín' : 'Crear bailarín'">
+		<header class="modal-heading">
+			<div>
+				<p class="eyebrow">Ficha de registro</p>
+				<h2>{{ bailarinSeleccionado ? 'Editar bailarín' : 'Nuevo bailarín' }}</h2>
+			</div>
+			<button type="button" class="close-modal" (click)="cerrarFormulario()" aria-label="Cerrar formulario">&times;</button>
+		</header>
+		<div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
+		<app-crear-bailarines
+			[bailarin]="bailarinSeleccionado"
+			[guardando]="guardando"
+			(guardar)="guardar($event)"
+			(cancelar)="cerrarFormulario()">
+		</app-crear-bailarines>
+	</section>
+</div>

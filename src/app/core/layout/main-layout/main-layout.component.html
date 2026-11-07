@@ -1,0 +1,64 @@
+<div class="layout d-flex flex-column min-vh-100">
+  <!-- Sidebar + contenido principal (flex horizontal) -->
+  <div class="d-flex flex-grow-1">
+    <div class="app-sidebar d-flex flex-column" [ngClass]="{ 'sidebar-expanded': visibleSidebar, 'sidebar-collapsed': !visibleSidebar }">
+  <!-- Cabecera del sidebar -->
+  <div class="sidebar-header px-3 py-2 small-text">
+    <i class="pi pi-user me-2"></i>
+    <div *ngIf="visibleSidebar">
+      <strong>{{ userName }}</strong>
+      <div><i class="pi pi-id-card "></i> {{ userRole }}</div>
+    </div>
+  </div>
+
+  <!-- Menú -->
+  <ul class="custom-menu small-text">
+    <li *ngFor="let item of menuItems">
+      <a [routerLink]="item.routerLink" routerLinkActive="active-link">
+        <i [class]="item.icon + ' me-2'"></i>
+        <span *ngIf="visibleSidebar">{{ item.label }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <!-- Botón de búsqueda al fondo -->
+  <div class="mt-auto p-3">
+   <div class="p-input-icon-left w-100">
+    <i class="pi pi-search"></i>
+    <input type="text" pInputText class="w-100 small-text" placeholder="Buscar..."
+    [(ngModel)]="menuSearchText" (ngModelChange)="filterMenu()"/>
+  </div>
+  </div>
+        <!-- Toggle button -->
+        <button class="toggle-btn"
+                (click)="toggleSidebar()"
+                [ngStyle]="{ left: visibleSidebar ? '220px' : '45px' }">
+          <i [class]="visibleSidebar ? 'pi pi-angle-left' : 'pi pi-angle-right'"></i>
+        </button>
+
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="main-content flex-grow-1 d-flex flex-column" [ngClass]="{ 'ms-310px': visibleSidebar, 'ms-60px': !visibleSidebar }">
+      <div class="flex-grow-1 p-2">
+          <!-- Logo + logout -->
+          <div class="d-flex justify-content-between align-items-center mt-0">
+            <div class="logo-image "></div>
+            <button pButton label="Cerrar sesión" icon="pi pi-sign-out" class="p-button-danger p-button-sm small-text" (click)="logout()"></button>
+          </div>
+          <div class="breadcrumb-container mx-auto small-breadcrumb" style="max-height: 200px;">
+          <p-breadcrumb  [model]="breadcrumbItems" [home]="{ icon: 'pi pi-home', routerLink: '/dashboard' }"></p-breadcrumb>
+          </div>
+          <p-toast></p-toast>
+
+          <router-outlet></router-outlet>
+
+      </div>
+
+      <!-- Footer SIEMPRE al fondo -->
+      <footer class="app-footer text-center text-muted py-3 mt-auto bg-light border-top">
+        <small>Sistema Nacional de Información Turística - UTPL © {{ currentYear }}</small>
+      </footer>
+    </div>
+  </div>
+</div>

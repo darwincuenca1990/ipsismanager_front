@@ -1,0 +1,61 @@
+<div class="d-flex" style="height: 100vh;">
+  <!-- IZQUIERDA -->
+  <div class="w-50 d-flex justify-content-center align-items-center bg-light">
+    <!-- Contenido izquierdo -->
+    <div class="text-center">
+      <div>
+
+        <!--<h3 class="text-center w-100">Indicadores de <strong>Alojamiento</strong></h3>
+        <p class="mb-4 text-center">Indicadores de alojamiento del sector turístico.</p>-->
+
+        <div class="login-container">
+          <div class="logo-image"></div>
+          <p-card header="Login" styleClass="ui-card-shadow">
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+              <div class="row mb-3 align-items-center">
+                <label for="username" class="col-sm-3 col-form-label medium-text">Usuario</label>
+                <div class="col-sm-9">
+                  <input id="username" type="text" pInputText formControlName="username" class="small-calendar" autocomplete="username" />
+                  <div *ngIf="submitted && loginForm.controls['username'].invalid">
+                    <small class="p-error d-block mt-1">El usuario es obligatorio.</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-3 align-items-center">
+                <label for="password" class="col-sm-3 col-form-label">Contraseña</label>
+                <div class="col-sm-9">
+                  <p-password
+                    inputId="password"
+                    formControlName="password"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    [inputStyleClass]="'small-calendar w-100'"
+                    autocomplete="current-password"
+                    spellcheck="false">
+                  </p-password>
+                  <div *ngIf="submitted && loginForm.controls['username'].invalid">
+                    <small *ngIf="submitted && loginForm.controls['password'].invalid" class="p-error">
+                      La contraseña es obligatoria.
+                    </small>
+                  </div>
+
+                </div>
+              </div>
+              <p-button label="Iniciar sesión" type="submit" class="p-mt-2 small-button"
+                icon="pi pi-sign-in"></p-button>
+            </form>
+          </p-card>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- DERECHA -->
+  <div class="w-50 d-flex justify-content-center align-items-center right-section">
+    <!-- Contenido derecho -->
+    <div class="text-center">
+    </div>
+  </div>
+</div>

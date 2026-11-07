@@ -1,0 +1,240 @@
+/*Para tomar el left del dashboard cuando el sidebar esta mostrandose*/
+.ms-350px {
+  margin-left: 350px;
+}
+
+
+/*Para tomar el left del dashboard cuando el sidebar esta oculto*/
+.ms-70px {
+  margin-left: 70px;
+}
+
+/*Para tomar el left del dashboard cuando el sidebar esta mostrandose*/
+.ms-750px {
+  margin-left: 750px;
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 1rem;
+  left: 300px; /* mismo ancho del sidebar */
+  z-index: 1100;
+  transition: left 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  border-radius: 50%;
+}
+
+.ms-0 .toggle-btn {
+  left: 0; /* cuando el sidebar está oculto */
+}
+
+.logo-image {
+  width: 300px;
+  height: 75px;
+  background-image: url('../../../../assets/images/Logo_2024.jpeg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+    display: inline-block;
+  vertical-align: middle;
+  background-color: transparent;
+}
+
+
+:host ::ng-deep .active-link {
+  background-color: #cbb133 !important;
+  color: #374151 !important;
+  border-radius: 4px;
+}
+
+:host ::ng-deep .active-link .p-menuitem-icon {
+  color: #374151 !important;
+}
+
+.custom-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.custom-menu li a {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #374151;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+/* Estilo al pasar el cursor sobre los enlaces */
+.custom-menu li a:hover {
+  background-color: #f3f4f6;
+}
+
+/* Estilo para el enlace activo */
+.custom-menu li a.active-link {
+  background-color: #cbb133;
+  color: #374151;
+  font-weight: bold;
+}
+
+/* Estilo para el ícono dentro del enlace activo */
+.custom-menu li a.active-link i {
+  color: #374151;
+}
+
+.app-footer {
+  font-size: 0.875rem;
+}
+
+.app-footer::after {
+  content: "";
+  display: inline-block;
+  width: 100px;
+  height: 40px;
+  background-image: url('../../../../assets/images/Logo_2024.jpeg');
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: contain;
+  margin-left: 5px;
+  margin-top: 5px;
+}
+
+.layout {
+  display: flex;
+  width: 100vw;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex-grow: 0.5;
+  transition: margin-left 0.3s ease;
+  overflow-x: hidden; /* para evitar scroll lateral si hay contenido grande */
+}
+.app-sidebar {
+  height: 100vh;
+  background-color: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  border-right: 1px solid #ccc;
+}
+
+.sidebar-expanded {
+  width: 230px;
+}
+
+.sidebar-collapsed {
+  width: 60px;
+}
+
+.main-content {
+  margin-left: 65px;
+  transition: margin-left 0.3s ease;
+  margin-top: 0.5em;
+}
+
+.content-expanded {
+  margin-left: 230px;
+}
+
+.content-collapsed {
+  margin-left: 60px;
+}
+
+.toggle-btn {
+  position: fixed;
+  top: 1rem;
+  left: 60px;
+  z-index: 1000;
+  transition: left 0.3s ease;
+}
+
+.content-expanded + .toggle-btn {
+  left: 230px;
+}
+
+.toggle-btn {
+  position: fixed;
+  top: 1rem;
+  z-index: 1100;
+  background-color: #cbb133;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Posiciones dependiendo del estado del sidebar */
+.sidebar-expanded + .toggle-btn {
+  left: 230px; /* igual al ancho del sidebar expandido */
+}
+
+.sidebar-collapsed + .toggle-btn {
+  left: 60px; /* igual al ancho del sidebar colapsado */
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.ms-310px {
+  margin-left: 230px;
+}
+
+.ms-60px {
+  margin-left: 60px;
+}
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sidebar-toggle-button {
+  position: relative;
+  z-index: 10;
+}
+
+.small-text {
+  font-size: 0.8rem !important;
+}
+
+:host ::ng-deep .p-breadcrumb {
+  font-size: 0.8rem; /* o usa small, 12px, etc. */
+}
+
+.small-breadcrumb ::ng-deep .p-breadcrumb {
+  font-size: 0.75rem; /* texto más pequeño */
+  padding: 0.25rem 0.5rem; /* menos espacio alrededor */
+}
+
+.small-breadcrumb ::ng-deep .p-breadcrumb .p-menuitem-text {
+  font-size: 0.75rem; /* aún más control del tamaño */
+}
+
+.small-breadcrumb ::ng-deep .p-breadcrumb .pi {
+  font-size: 0.85rem; /* íconos más pequeños */
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+
+
+
