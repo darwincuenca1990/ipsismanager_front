@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Bailarin, BailarinFormValue, GrupoFamiliar } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 
 @Component({
   selector: 'app-crear-bailarines',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ProgressSpinnerModule],
   templateUrl: './crear-bailarines.component.html',
   styleUrl: './crear-bailarines.component.css'
 })
@@ -21,6 +22,8 @@ export class CrearBailarinesComponent implements OnChanges {
   fotografia: File | null = null;
   fotografiaNombre = '';
   representanteSeleccionado: 'PAPA' | 'MAMA' | 'OTRO' = 'OTRO';
+  readonly fechaMinimaIngreso = '2013-05-13';
+  readonly fechaMaxima = this.fechaActual();
 
   readonly limites = {
     cedula: 15,
@@ -48,7 +51,12 @@ export class CrearBailarinesComponent implements OnChanges {
     cedula: ['', [Validators.required, Validators.maxLength(this.limites.cedula)]],
     apellidos: ['', [Validators.required, Validators.maxLength(this.limites.apellidos)]],
     nombres: ['', [Validators.required, Validators.maxLength(this.limites.nombres)]],
-    fecha_nacimiento: ['', Validators.required],
+    fecha_nacimiento: ['', [
+      Validators.required,
+      (control: AbstractControl) => typeof control.value === 'string' && control.value > this.fechaMaxima
+        ? { fechaNacimientoFutura: true }
+        : null
+    ]],
     elenco: ['', Validators.required],
     lugar_nacimiento: ['', Validators.maxLength(this.limites.lugar_nacimiento)],
     celular: ['', [Validators.maxLength(this.limites.celular), Validators.pattern(/^\d*$/)]],
@@ -65,7 +73,12 @@ export class CrearBailarinesComponent implements OnChanges {
     autorizado_publicacion: [false],
     fecha_autorizacion_publicacion: [this.fechaActual()],
     inscripcion: this.fb.group({
-      fecha_ingreso_agrupacion: [this.fechaActual(), Validators.required],
+      fecha_ingreso_agrupacion: [this.fechaActual(), [
+        Validators.required,
+        (control: AbstractControl) => typeof control.value === 'string' && control.value < this.fechaMinimaIngreso
+          ? { fechaIngresoMinima: true }
+          : null
+      ]],
       estado: ['ACTIVO' as 'ACTIVO' | 'INACTIVO', Validators.required],
       motivo_ingreso_agrupacion: [''],
       fecha_salida: ['']
@@ -93,6 +106,12 @@ export class CrearBailarinesComponent implements OnChanges {
 
   get opcionesElenco(): { value: Elenco; label: string }[] {
     return this.commonsService.opcionesElenco;
+  }
+
+  get antiguedadAgrupacion(): string {
+    return this.commonsService.calcularAntiguedad(
+      this.form.controls.inscripcion.controls.fecha_ingreso_agrupacion.value
+    );
   }
 
   caracteresUsados(controlPath: string): number {
@@ -221,16 +240,19 @@ export class CrearBailarinesComponent implements OnChanges {
     const group = typeof this.bailarin.grupo_familiar === 'object'
       ? this.bailarin.grupo_familiar
       : {} as GrupoFamiliar;
+    const inscripcionBackend = this.obtenerInscripcionBackend();
+
     this.form.patchValue({
       ...this.bailarin,
-      fecha_nacimiento: this.bailarin.fecha_nacimiento?.slice(0, 10) ?? '',
+      fecha_nacimiento: this.normalizarFecha(this.bailarin.fecha_nacimiento),
       elenco: this.bailarin.elenco ?? this.obtenerElencoPorEdad(this.bailarin.fecha_nacimiento?.slice(0, 10)) ?? '',
-      fecha_autorizacion_publicacion: this.bailarin.fecha_autorizacion_publicacion?.slice(0, 10) ?? this.fechaActual(),
-      inscripcion: this.bailarin.inscripcion ?? {
-        fecha_ingreso_agrupacion: this.fechaActual(),
+      fecha_autorizacion_publicacion: this.normalizarFecha(this.bailarin.fecha_autorizacion_publicacion) || this.fechaActual(),
+      inscripcion: {
         estado: 'ACTIVO',
         motivo_ingreso_agrupacion: '',
-        fecha_salida: ''
+        ...inscripcionBackend,
+        fecha_ingreso_agrupacion: this.normalizarFecha(inscripcionBackend?.fecha_ingreso_agrupacion) || this.fechaActual(),
+        fecha_salida: this.normalizarFecha(inscripcionBackend?.fecha_salida)
       },
       grupo_familiar: group
     });
@@ -250,11 +272,49 @@ export class CrearBailarinesComponent implements OnChanges {
     return [nombres, apellidos].filter(Boolean).join(' ').trim();
   }
 
+  private obtenerInscripcionBackend(): Partial<NonNullable<Bailarin['inscripcion']>> | null {
+    if (this.bailarin?.inscripcion) {
+      return {
+        ...this.bailarin.inscripcion,
+        fecha_ingreso_agrupacion: this.normalizarFecha(this.bailarin.inscripcion.fecha_ingreso_agrupacion),
+        fecha_salida: this.normalizarFecha(this.bailarin.inscripcion.fecha_salida) || null
+      };
+    }
+
+    const inscripciones = this.bailarin?.inscripciones;
+    const inscripcionRelacionada = inscripciones?.length
+      ? [...inscripciones].sort((a, b) =>
+          (b.fecha_ingreso_agrupacion ?? '').localeCompare(a.fecha_ingreso_agrupacion ?? '')
+        )[0]
+      : null;
+
+    const fechaIngreso = inscripcionRelacionada?.fecha_ingreso_agrupacion
+      || this.bailarin?.fecha_ingreso_agrupacion;
+    const estado = inscripcionRelacionada?.estado || this.bailarin?.estado;
+    const motivo = inscripcionRelacionada?.motivo_ingreso_agrupacion
+      ?? this.bailarin?.motivo_ingreso_agrupacion;
+    const fechaSalida = inscripcionRelacionada?.fecha_salida
+      ?? this.bailarin?.fecha_salida;
+
+    if (!fechaIngreso && !estado && motivo == null && fechaSalida === undefined) return null;
+
+    return {
+      fecha_ingreso_agrupacion: this.normalizarFecha(fechaIngreso),
+      estado: estado || 'ACTIVO',
+      motivo_ingreso_agrupacion: motivo ?? '',
+      fecha_salida: this.normalizarFecha(fechaSalida) || null
+    };
+  }
+
+  private normalizarFecha(fecha?: string | null): string {
+    return fecha?.slice(0, 10) ?? '';
+  }
+
   private normalizar(value?: string): string {
     return (value ?? '').trim().toLocaleLowerCase();
   }
 
-  private obtenerElencoPorEdad(fechaNacimiento?: string): Elenco | null {
+  private obtenerElencoPorEdad(fechaNacimiento?: string | null): Elenco | null {
     if (!fechaNacimiento) return null;
     const [year, month, day] = fechaNacimiento.split('-').map(Number);
     const birthDate = new Date(year, month - 1, day);

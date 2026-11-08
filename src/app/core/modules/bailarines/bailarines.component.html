@@ -47,6 +47,7 @@
 			<table class="table dancer-table align-middle mb-0">
 				<thead>
 					<tr>
+						<th scope="col" class="photo-heading">Foto</th>
 						<th scope="col">Bailarín</th>
 						<th scope="col">Elenco</th>
 						<th scope="col">Estado</th>
@@ -60,9 +61,16 @@
 				</thead>
 				<tbody>
 					<tr *ngIf="cargando">
-						<td colspan="9" class="empty-state">Cargando bailarines…</td>
+						<td colspan="10" class="empty-state loading-cell">
+							<p-progressSpinner ariaLabel="Cargando bailarines" [style]="{ width: '2.5rem', height: '2.5rem' }" strokeWidth="5"></p-progressSpinner>
+							<span>Cargando bailarines…</span>
+						</td>
 					</tr>
 					<tr *ngFor="let bailarin of bailarinesFiltrados">
+						<td class="photo-cell">
+							<img *ngIf="fotografiaUrl(bailarin) as fotoUrl; else fotoPorDefecto" [src]="fotoUrl" [alt]="'Fotografía de ' + bailarin.nombres" class="dancer-thumbnail">
+							<ng-template #fotoPorDefecto><span class="dancer-avatar-placeholder" aria-label="Sin fotografía"><i class="pi pi-user" aria-hidden="true"></i></span></ng-template>
+						</td>
 						<td>
 							<div class="dancer-name">{{ bailarin.apellidos }} {{ bailarin.nombres }}</div>
 							<small class="muted">{{ bailarin.correo || 'Sin correo registrado' }}</small>
@@ -80,6 +88,9 @@
 						<td><span class="status-pill" [class.status-yes]="bailarin.estudia">{{ bailarin.estudia ? 'Sí' : 'No' }}</span></td>
 						<td><span class="status-pill" [class.status-yes]="bailarin.trabaja">{{ bailarin.trabaja ? 'Sí' : 'No' }}</span></td>
 						<td class="actions-cell">
+							<button type="button" class="icon-action view-action" (click)="ver(bailarin)" aria-label="Ver datos del bailarín" title="Ver">
+								<i class="pi pi-eye" aria-hidden="true"></i>
+							</button>
 							<button type="button" class="icon-action edit-action" (click)="editar(bailarin)" aria-label="Editar bailarín" title="Editar">
 								<i class="pi pi-pencil" aria-hidden="true"></i>
 							</button>
@@ -89,7 +100,7 @@
 						</td>
 					</tr>
 					<tr *ngIf="!cargando && bailarinesFiltrados.length === 0">
-						<td colspan="9" class="empty-state">
+						<td colspan="10" class="empty-state">
 							{{ busqueda || filtroElenco !== 'TODOS' || filtroEstado !== 'ACTIVO' ? 'No hay bailarines que coincidan con los filtros.' : 'Todavía no hay bailarines activos registrados.' }}
 						</td>
 					</tr>
@@ -115,5 +126,88 @@
 			(guardar)="guardar($event)"
 			(cancelar)="cerrarFormulario()">
 		</app-crear-bailarines>
+	</section>
+</div>
+
+<div *ngIf="bailarinDetalle as detalle" class="modal-backdrop-custom detail-backdrop" (click)="cerrarDetalle()">
+	<section class="detail-modal" role="dialog" aria-modal="true" aria-label="Datos del bailarín" (click)="$event.stopPropagation()">
+		<header class="modal-heading">
+			<div>
+				<p class="eyebrow">Ficha informativa</p>
+				<h2>{{ detalle.nombres }} {{ detalle.apellidos }}</h2>
+			</div>
+			<button type="button" class="close-modal" (click)="cerrarDetalle()" aria-label="Cerrar detalle">&times;</button>
+		</header>
+
+		<div class="detail-profile">
+			<img *ngIf="fotografiaUrl(detalle) as fotoUrl; else detalleFotoPorDefecto" [src]="fotoUrl" [alt]="'Fotografía de ' + detalle.nombres" class="detail-photo">
+			<ng-template #detalleFotoPorDefecto><span class="detail-photo dancer-avatar-placeholder"><i class="pi pi-user" aria-hidden="true"></i></span></ng-template>
+			<div class="detail-profile-info">
+				<h3>{{ detalle.nombres }} {{ detalle.apellidos }}</h3>
+				<p>{{ etiquetaElenco(detalle.elenco) }} · {{ detalle.cedula }}</p>
+				<span class="status-pill" [class.status-yes]="estadoBailarin(detalle) === 'ACTIVO'" [class.status-inactive]="estadoBailarin(detalle) === 'INACTIVO'">
+					{{ estadoBailarin(detalle) === 'INACTIVO' ? 'Inactivo' : 'Activo' }}
+				</span>
+			</div>
+			<div class="tenure-highlight profile-tenure" role="status">
+				<i class="pi pi-clock" aria-hidden="true"></i>
+				<div><span>En la agrupación</span><strong>{{ antiguedadDetalle }}</strong></div>
+			</div>
+		</div>
+
+		<section class="detail-section">
+			<h3>Datos personales</h3>
+			<div class="detail-grid">
+				<div><span>Cédula</span><strong>{{ detalle.cedula || '—' }}</strong></div>
+				<div><span>Fecha de nacimiento</span><strong>{{ detalle.fecha_nacimiento || '—' }}</strong></div>
+				<div><span>Lugar de nacimiento</span><strong>{{ detalle.lugar_nacimiento || '—' }}</strong></div>
+				<div><span>Celular</span><strong>{{ detalle.celular || '—' }}</strong></div>
+				<div><span>Correo</span><strong>{{ detalle.correo || '—' }}</strong></div>
+				<div><span>Convive con</span><strong>{{ detalle.vive_con || '—' }}</strong></div>
+				<div class="detail-wide"><span>Dirección</span><strong>{{ detalle.direccion_domicilio || '—' }}</strong></div>
+				<div class="detail-wide"><span>Referencia domiciliaria</span><strong>{{ detalle.referencia_domicilio || '—' }}</strong></div>
+				<div><span>Estudia</span><strong>{{ detalle.estudia ? 'Sí' : 'No' }}</strong></div>
+				<div><span>Institución</span><strong>{{ detalle.institucion_estudio || '—' }}</strong></div>
+				<div><span>Trabaja</span><strong>{{ detalle.trabaja ? 'Sí' : 'No' }}</strong></div>
+				<div><span>Lugar de trabajo</span><strong>{{ detalle.lugar_trabajo || '—' }}</strong></div>
+				<div><span>Padece enfermedad</span><strong>{{ detalle.padece_enfermedad ? 'Sí' : 'No' }}</strong></div>
+				<div class="detail-wide"><span>Detalle de enfermedad</span><strong>{{ detalle.detalle_enfermedad || '—' }}</strong></div>
+			</div>
+		</section>
+
+		<section class="detail-section" *ngIf="inscripcionDetalle as inscripcion">
+			<h3>Inscripción a la agrupación</h3>
+			<div class="detail-grid">
+				<div><span>Fecha de ingreso</span><strong>{{ inscripcion.fecha_ingreso_agrupacion || '—' }}</strong></div>
+				<div><span>Estado</span><strong>{{ inscripcion.estado || '—' }}</strong></div>
+				<div><span>Fecha de salida</span><strong>{{ inscripcion.fecha_salida || '—' }}</strong></div>
+				<div class="detail-wide"><span>Motivo de ingreso</span><strong>{{ inscripcion.motivo_ingreso_agrupacion || '—' }}</strong></div>
+			</div>
+		</section>
+
+		<section class="detail-section" *ngIf="grupoFamiliarDetalle as grupo">
+			<h3>Grupo familiar y representante</h3>
+			<div class="detail-grid">
+				<div><span>Padre</span><strong>{{ grupo.nombres_papa || '—' }} {{ grupo.apellidos_papa || '' }}</strong></div>
+				<div><span>Celular del padre</span><strong>{{ grupo.celular_papa || '—' }}</strong></div>
+				<div><span>Trabajo del padre</span><strong>{{ grupo.lugar_trabajo_papa || '—' }}</strong></div>
+				<div><span>Madre</span><strong>{{ grupo.nombres_mama || '—' }} {{ grupo.apellidos_mama || '' }}</strong></div>
+				<div><span>Celular de la madre</span><strong>{{ grupo.celular_mama || '—' }}</strong></div>
+				<div><span>Trabajo de la madre</span><strong>{{ grupo.lugar_trabajo_mama || '—' }}</strong></div>
+				<div><span>Representante</span><strong>{{ grupo.nombres_completos_representante || '—' }}</strong></div>
+				<div><span>Parentesco</span><strong>{{ grupo.parentesco || '—' }}</strong></div>
+				<div><span>Celular del representante</span><strong>{{ grupo.celular_representante || '—' }}</strong></div>
+				<div><span>Trabajo del representante</span><strong>{{ grupo.lugar_trabajo_representante || '—' }}</strong></div>
+			</div>
+		</section>
+
+		<section class="detail-section">
+			<h3>Autorización de imagen</h3>
+			<div class="detail-grid">
+				<div><span>Autoriza publicación</span><strong>{{ detalle.autorizado_publicacion ? 'Sí' : 'No' }}</strong></div>
+				<div><span>Fecha de autorización</span><strong>{{ detalle.fecha_autorizacion_publicacion || '—' }}</strong></div>
+				<div class="detail-wide"><span>Archivo de fotografía</span><strong>{{ detalle.fotografia || 'Sin fotografía registrada' }}</strong></div>
+			</div>
+		</section>
 	</section>
 </div>

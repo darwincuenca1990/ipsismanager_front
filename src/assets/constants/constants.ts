@@ -15,6 +15,10 @@ export const constants = {
                     }
                 }
             },
+            BAILARINES: {
+                PATH: '/bailarines/',
+                FOTOGRAFIA: '/{id}/fotografia/'
+            },
             /*USERS : {
                 PATH : '/users',
                 CONTROLLERS : {

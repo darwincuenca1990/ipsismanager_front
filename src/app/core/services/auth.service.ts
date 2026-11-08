@@ -198,6 +198,8 @@ export class AuthService {
   }
 
   private attachUserActivityListeners(): void {
+    if (typeof document === 'undefined') return;
+
     const events = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll', 'wheel'];
     events.forEach(eventName => {
       document.addEventListener(eventName, () => {

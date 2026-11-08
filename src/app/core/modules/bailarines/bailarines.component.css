@@ -168,7 +168,7 @@
 }
 
 .dancer-table {
-	min-width: 780px;
+	min-width: 840px;
 }
 
 .dancer-table th {
@@ -232,6 +232,7 @@
 }
 
 .edit-action { color: #1d4ed8; }
+.view-action { color: #0f766e; }
 .delete-action { color: #b42318; }
 .icon-action:hover { background: #f1f5f9; }
 
@@ -315,4 +316,5 @@
 	.form-modal {
 		padding: 1rem;
 	}
+
 }

@@ -8,7 +8,7 @@
 			<label><span class="field-label">Cédula <span class="required-mark">*</span></span><input class="form-control" formControlName="cedula" [attr.maxlength]="limites.cedula" autocomplete="off"><small class="character-counter">{{ caracteresUsados('cedula') }}/{{ limites.cedula }}</small></label>
 			<label><span class="field-label">Apellidos <span class="required-mark">*</span></span><input class="form-control" formControlName="apellidos" [attr.maxlength]="limites.apellidos"><small class="character-counter">{{ caracteresUsados('apellidos') }}/{{ limites.apellidos }}</small></label>
 			<label class="form-field"> <span class="field-label">Nombres <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres" [attr.maxlength]="limites.nombres"><small class="character-counter">{{ caracteresUsados('nombres') }}/{{ limites.nombres }}</small></label>
-			<label class="form-field"> <span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control" type="date" formControlName="fecha_nacimiento" (change)="actualizarElencoPorFecha()"></label>
+			<label class="form-field"><span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control date-input" type="date" formControlName="fecha_nacimiento" [max]="fechaMaxima" (change)="actualizarElencoPorFecha()"><small *ngIf="enviado && form.controls.fecha_nacimiento.hasError('fechaNacimientoFutura')" class="calendar-error">La fecha de nacimiento no puede ser posterior a hoy.</small></label>
 			<label class="form-field"> <span class="field-label">Elenco <span class="required-mark">*</span></span>
 				<select class="form-select" formControlName="elenco">
 					<option value="">Seleccione un elenco</option>
@@ -41,7 +41,7 @@
 		<div class="form-grid extra-fields">
 			<label>Institución educativa<input class="form-control" formControlName="institucion_estudio" [attr.maxlength]="limites.institucion_estudio"><small class="character-counter">{{ caracteresUsados('institucion_estudio') }}/{{ limites.institucion_estudio }}</small></label>
 			<label>Lugar de trabajo<input class="form-control" formControlName="lugar_trabajo" [attr.maxlength]="limites.lugar_trabajo"><small class="character-counter">{{ caracteresUsados('lugar_trabajo') }}/{{ limites.lugar_trabajo }}</small></label>
-			<label>Fecha de autorización<input class="form-control" type="date" formControlName="fecha_autorizacion_publicacion"></label>
+			<label class="form-field">Fecha de autorización<input class="form-control date-input" type="date" formControlName="fecha_autorizacion_publicacion" [max]="fechaMaxima"></label>
 			<label class="wide">Detalle de enfermedad<textarea class="form-control" formControlName="detalle_enfermedad" rows="2" [attr.maxlength]="limites.detalle_enfermedad"></textarea><small class="character-counter">{{ caracteresUsados('detalle_enfermedad') }}/{{ limites.detalle_enfermedad }}</small></label>
 		</div>
 	</section>
@@ -51,8 +51,13 @@
 		<div class="form-grid">
 			<label class="form-field">
 				<span class="field-label">Fecha de ingreso a la agrupación <span class="required-mark">*</span></span>
-				<input class="form-control" type="date" formControlName="fecha_ingreso_agrupacion">
+				<input class="form-control date-input" type="date" formControlName="fecha_ingreso_agrupacion" [min]="fechaMinimaIngreso" [max]="fechaMaxima">
+				<small *ngIf="enviado && form.controls.inscripcion.controls.fecha_ingreso_agrupacion.hasError('fechaIngresoMinima')" class="calendar-error">La fecha no puede ser anterior al 13/05/2013.</small>
 			</label>
+			<div class="tenure-highlight" role="status" aria-live="polite">
+				<i class="pi pi-clock" aria-hidden="true"></i>
+				<div><span>Tiempo en la agrupación</span><strong>{{ antiguedadAgrupacion }}</strong></div>
+			</div>
 			<label class="form-field">
 				<span class="field-label">Estado <span class="required-mark">*</span></span>
 				<select class="form-select" formControlName="estado">
@@ -63,9 +68,7 @@
 			<label class="wide">Motivo de ingreso
 				<textarea class="form-control" formControlName="motivo_ingreso_agrupacion" rows="3"></textarea>
 			</label>
-			<label class="form-field">Fecha de salida (opcional)
-				<input class="form-control" type="date" formControlName="fecha_salida">
-			</label>
+			<label class="form-field">Fecha de salida (opcional)<input class="form-control date-input" type="date" formControlName="fecha_salida" [min]="fechaMinimaIngreso" [max]="fechaMaxima"></label>
 		</div>
 	</section>
 
@@ -97,7 +100,8 @@
 	<div class="form-actions">
 		<button type="button" class="btn btn-outline-secondary" [disabled]="guardando" (click)="cancelar.emit()">Cancelar</button>
 		<button type="submit" class="btn btn-primary" [disabled]="guardando">
-			{{ guardando ? 'Guardando…' : (bailarin ? 'Guardar cambios' : 'Crear bailarín') }}
+			<p-progressSpinner *ngIf="guardando" ariaLabel="Guardando bailarín" [style]="{ width: '1rem', height: '1rem' }" strokeWidth="6"></p-progressSpinner>
+			<span>{{ guardando ? 'Guardando…' : (bailarin ? 'Guardar cambios' : 'Crear bailarín') }}</span>
 		</button>
 	</div>
 </form>

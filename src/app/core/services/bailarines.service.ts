@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, map, of, switchMap, throwError } from 'rxjs';
 import { constants } from '../../../assets/constants/constants';
 import { Elenco } from './commons.service';
 
@@ -50,9 +50,15 @@ export interface Bailarin {
   detalle_enfermedad: string;
   correo: string;
   fotografia?: string | null;
+  fotografia_drive_id?: string | null;
   autorizado_publicacion: boolean;
   fecha_autorizacion_publicacion?: string | null;
   inscripcion?: Inscripcion;
+  inscripciones?: Inscripcion[];
+  fecha_ingreso_agrupacion?: string | null;
+  estado?: 'ACTIVO' | 'INACTIVO' | null;
+  motivo_ingreso_agrupacion?: string | null;
+  fecha_salida?: string | null;
 }
 
 export interface BailarinFormValue extends Omit<Bailarin, 'id' | 'pk' | 'grupo_familiar' | 'fotografia' | 'inscripcion'> {
@@ -76,7 +82,14 @@ export class BailarinesService {
     const params = new HttpParams()
       .set('elenco', filtros.elenco)
       .set('estado', filtros.estado);
-    return this.http.get<any>(`${this.apiUrl}/bailarines/`, { params });
+    const path = constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.BAILARINES.PATH;
+    return this.http.get<any>(`${this.apiUrl}${path}`, { params });
+  }
+
+  obtenerFotografia(id: number): Observable<Blob> {
+    const bailarines = constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.BAILARINES;
+    const path = bailarines.PATH + bailarines.FOTOGRAFIA.replace('{id}', String(id));
+    return this.http.get(`${this.apiUrl}${path}`, { responseType: 'blob' });
   }
 
   obtenerGrupo(id: number): Observable<GrupoFamiliar> {
@@ -85,7 +98,8 @@ export class BailarinesService {
 
   crear(value: BailarinFormValue): Observable<any> {
     return this.http.post<GrupoFamiliar>(`${this.apiUrl}/grupos-familiares/`, value.grupo_familiar).pipe(
-      switchMap(grupo => this.http.post(`${this.apiUrl}/bailarines/`, this.toPayload(value, this.getId(grupo))))
+      switchMap(grupo => this.http.post<any>(`${this.apiUrl}/bailarines/`, this.toPayload(value, this.getId(grupo)))),
+      switchMap(bailarin => this.subirFotografiaSiExiste(bailarin, value.fotografia))
     );
   }
 
@@ -96,10 +110,11 @@ export class BailarinesService {
       : this.http.post<GrupoFamiliar>(`${this.apiUrl}/grupos-familiares/`, value.grupo_familiar);
 
     return updateGrupo.pipe(
-      switchMap(grupo => this.http.patch(
+      switchMap(grupo => this.http.patch<any>(
         `${this.apiUrl}/bailarines/${this.getId(bailarin)}/`,
         this.toPayload(value, this.getId(grupo) || grupoId)
-      ))
+      )),
+      switchMap(response => this.subirFotografiaSiExiste(response, value.fotografia, this.getId(bailarin)))
     );
   }
 
@@ -107,8 +122,8 @@ export class BailarinesService {
     return this.http.delete<void>(`${this.apiUrl}/bailarines/${this.getId(bailarin)}/`);
   }
 
-  private toPayload(value: BailarinFormValue, grupoId: number): FormData | Record<string, unknown> {
-    const { grupo_familiar: _grupo, fotografia, ...fields } = value;
+  private toPayload(value: BailarinFormValue, grupoId: number): Record<string, unknown> {
+    const { grupo_familiar: _grupo, fotografia: _fotografia, ...fields } = value;
     const payload = {
       ...fields,
       grupo_familiar_id: grupoId,
@@ -118,18 +133,22 @@ export class BailarinesService {
       }
     };
 
-    if (!fotografia) return payload;
+    console.log('Inscripción que se enviará al backend:', payload.inscripcion);
+    return payload;
+  }
+
+  private subirFotografiaSiExiste<T>(response: T, fotografia: File | null, fallbackId?: number): Observable<T> {
+    if (!fotografia) return of(response);
+
+    const responseRecord = response as { id?: number; pk?: number; data?: { id?: number; pk?: number } } | null;
+    const id = responseRecord?.id ?? responseRecord?.pk ?? responseRecord?.data?.id ?? responseRecord?.data?.pk ?? fallbackId;
+    if (!id) {
+      return throwError(() => new Error('El API no devolvió el id del bailarín para subir la fotografía.'));
+    }
 
     const formData = new FormData();
-    Object.entries(payload).forEach(([key, fieldValue]) => {
-      if (key === 'inscripcion') {
-        formData.append(key, JSON.stringify(fieldValue));
-      } else if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
-        formData.append(key, String(fieldValue));
-      }
-    });
     formData.append('fotografia', fotografia, fotografia.name);
-    return formData;
+    return this.http.patch(`${this.apiUrl}/bailarines/${id}/`, formData).pipe(map(() => response));
   }
 
   private getId(value: number | { id?: number; pk?: number }): number {

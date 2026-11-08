@@ -1,20 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
-import { Bailarin, BailarinFormValue, BailarinesService } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, BailarinesService, GrupoFamiliar, Inscripcion } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 import { CrearBailarinesComponent } from '../crear-bailarines/crear-bailarines.component';
 
 @Component({
   selector: 'app-bailarines',
   standalone: true,
-  imports: [CommonModule, FormsModule, CrearBailarinesComponent],
+  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent],
   templateUrl: './bailarines.component.html',
   styleUrl: './bailarines.component.css'
 })
-export class BailarinesComponent implements OnInit {
+export class BailarinesComponent implements OnInit, OnDestroy {
   bailarines: Bailarin[] = [];
+  fotoUrlPorId: Record<number, string> = {};
   busqueda = '';
   filtroElenco: Elenco | 'TODOS' = 'TODOS';
   filtroEstado: 'ACTIVO' | 'INACTIVO' = 'ACTIVO';
@@ -23,6 +26,8 @@ export class BailarinesComponent implements OnInit {
   mostrarFormulario = false;
   error = '';
   bailarinSeleccionado: Bailarin | null = null;
+  bailarinDetalle: Bailarin | null = null;
+  private solicitudesFoto: Subscription[] = [];
 
   constructor(
     private readonly bailarinesService: BailarinesService,
@@ -35,6 +40,10 @@ export class BailarinesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarBailarines();
+  }
+
+  ngOnDestroy(): void {
+    this.limpiarFotografias();
   }
 
   get bailarinesFiltrados(): Bailarin[] {
@@ -58,6 +67,7 @@ export class BailarinesComponent implements OnInit {
       next: response => {
         const rows = Array.isArray(response) ? response : response?.results;
         this.bailarines = Array.isArray(rows) ? rows : [];
+        this.cargarFotografias(this.bailarines);
         this.cargando = false;
       },
       error: err => {
@@ -147,6 +157,48 @@ export class BailarinesComponent implements OnInit {
     this.bailarinSeleccionado = null;
   }
 
+  ver(bailarin: Bailarin): void {
+    this.bailarinDetalle = bailarin;
+  }
+
+  cerrarDetalle(): void {
+    this.bailarinDetalle = null;
+  }
+
+  get grupoFamiliarDetalle(): GrupoFamiliar | null {
+    const grupo = this.bailarinDetalle?.grupo_familiar;
+    return grupo && typeof grupo === 'object' ? grupo : null;
+  }
+
+  get inscripcionDetalle(): Inscripcion | null {
+    const bailarin = this.bailarinDetalle;
+    if (!bailarin) return null;
+    if (bailarin.inscripcion) return bailarin.inscripcion;
+
+    const relacionada = bailarin.inscripciones?.length
+      ? [...bailarin.inscripciones].sort((a, b) =>
+          (b.fecha_ingreso_agrupacion ?? '').localeCompare(a.fecha_ingreso_agrupacion ?? '')
+        )[0]
+      : null;
+    const fechaIngreso = relacionada?.fecha_ingreso_agrupacion || bailarin.fecha_ingreso_agrupacion;
+    if (!fechaIngreso) return null;
+
+    return {
+      fecha_ingreso_agrupacion: fechaIngreso,
+      estado: relacionada?.estado ?? bailarin.estado ?? 'ACTIVO',
+      motivo_ingreso_agrupacion: relacionada?.motivo_ingreso_agrupacion ?? bailarin.motivo_ingreso_agrupacion ?? '',
+      fecha_salida: relacionada?.fecha_salida ?? bailarin.fecha_salida ?? null
+    };
+  }
+
+  get antiguedadDetalle(): string {
+    return this.commonsService.calcularAntiguedad(this.inscripcionDetalle?.fecha_ingreso_agrupacion);
+  }
+
+  fotografiaUrl(bailarin: Bailarin | null): string | null {
+    return bailarin ? this.fotoUrlPorId[bailarin.id] ?? null : null;
+  }
+
   nombreRepresentante(bailarin: Bailarin): string {
     return typeof bailarin.grupo_familiar === 'object'
       ? bailarin.grupo_familiar.nombres_completos_representante || '—'
@@ -184,6 +236,32 @@ export class BailarinesComponent implements OnInit {
   private normalizarEstado(estado?: string): 'ACTIVO' | 'INACTIVO' | null {
     const valor = estado?.trim().toUpperCase();
     return valor === 'ACTIVO' || valor === 'INACTIVO' ? valor : null;
+  }
+
+  private cargarFotografias(bailarines: Bailarin[]): void {
+    this.limpiarFotografias();
+    bailarines
+      .filter(bailarin => !!(bailarin.fotografia || bailarin.fotografia_drive_id))
+      .forEach(bailarin => {
+        const request = this.bailarinesService.obtenerFotografia(bailarin.id).subscribe({
+          next: blob => {
+            if (blob.size && typeof URL !== 'undefined' && URL.createObjectURL) {
+              this.fotoUrlPorId[bailarin.id] = URL.createObjectURL(blob);
+            }
+          },
+          error: () => {
+            // Si no hay imagen o el endpoint falla, se conserva el avatar genérico.
+          }
+        });
+        this.solicitudesFoto.push(request);
+      });
+  }
+
+  private limpiarFotografias(): void {
+    this.solicitudesFoto.forEach(request => request.unsubscribe());
+    this.solicitudesFoto = [];
+    Object.values(this.fotoUrlPorId).forEach(url => URL.revokeObjectURL(url));
+    this.fotoUrlPorId = {};
   }
 
   cambiarFiltros(): void {
