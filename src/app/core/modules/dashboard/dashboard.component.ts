@@ -1,183 +1,79 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
-import { PrimeNGConfig } from 'primeng/api';
-import { SHARED_IMPORTS } from '../../../shared/shared-imports';
-import { constants } from '../../../../assets/constants/constants';
-import { DashboardService } from '../../services/dashboard.service';
-import { CommonsService } from '../../services/commons.service';
-import { UserInfoService } from '../../services/user-info.service';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { DashboardService, ElencoDashboard, ResumenDashboard } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [SHARED_IMPORTS],
+  imports: [CommonModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit{
-  parseInt = parseInt;
-  constants = constants;
-  
-  public selectedDate: Date | null = null;
-  maxDate: Date = new Date();
-  /**Para obtener el resumen de establecimientos */ 
-  public establecimientos_resumen: any[] = [];
-  totalRegistros = 0;
-  paginaActual = 1;
-  pageSize = 10;
-  todosEstablecimientos: any[] = [];
-
-
-  es: any;
+export class DashboardComponent implements OnInit, OnDestroy {
+  resumen: ResumenDashboard | null = null;
+  cargando = false;
+  error = '';
+  readonly hoy = new Date();
+  readonly elencos: ElencoDashboard[] = ['INFANTIL', 'PLANTA', 'MÁSTER'];
+  private resumenSubscription?: Subscription;
 
   constructor(
-    private dashboardService: DashboardService,
-     private primengConfig: PrimeNGConfig,
-     private commonsService : CommonsService,
-    private userInfoService : UserInfoService,
-   private router: Router) {
+    private readonly dashboardService: DashboardService,
+    @Inject(PLATFORM_ID) private readonly platformId: object
+  ) {}
+
+  ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) this.cargarResumen();
   }
 
-  ngOnInit() {
-    const limit = new Date();
-    debugger;
-    limit.setHours(23, 59, 59, 999);
-    this.maxDate = limit;    
-    if(this.userInfoService.fechaSeleccionadaDashboard === undefined || this.userInfoService.fechaSeleccionadaDashboard === null){
-      this.selectedDate = new Date();
-      this.cambiarCalendarEspaniol();
-     // this.cargarEstablecimiento();
-     // this.cargarTodosEstablecimientos();
-    } else {
-      this.selectedDate = this.userInfoService.fechaSeleccionadaDashboard;
-    //  this.onDateChange(this.userInfoService.fechaSeleccionadaDashboard);
-    } 
+  ngOnDestroy(): void {
+    this.resumenSubscription?.unsubscribe();
+  }
 
-    this.primengConfig.setTranslation({
-      firstDayOfWeek: 1,
-      dayNames: [
-        'domingo',
-        'lunes',
-        'martes',
-        'miércoles',
-        'jueves',
-        'viernes',
-        'sábado',
-      ],
-      dayNamesShort: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
-      dayNamesMin: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-      monthNames: [
-        'Enero',
-        'Febrero',
-        'Marzo',
-        'Abril',
-        'Mayo',
-        'Junio',
-        'Julio',
-        'Agosto',
-        'Septiembre',
-        'Octubre',
-        'Noviembre',
-        'Diciembre',
-      ],
-      monthNamesShort: [
-        'ene',
-        'feb',
-        'mar',
-        'abr',
-        'may',
-        'jun',
-        'jul',
-        'ago',
-        'sep',
-        'oct',
-        'nov',
-        'dic',
-      ],
-      today: 'Hoy',
-      clear: 'Limpiar',
-      weekHeader: 'Sm',
-      dateFormat: 'dd/mm/yy',
+  cargarResumen(): void {
+    this.resumenSubscription?.unsubscribe();
+    this.cargando = true;
+    this.error = '';
+    this.resumenSubscription = this.dashboardService.obtenerResumen().subscribe({
+      next: resumen => {
+        this.resumen = resumen;
+        this.cargando = false;
+      },
+      error: () => {
+        this.error = 'No pudimos cargar el resumen. Revisa la conexión e inténtalo nuevamente.';
+        this.cargando = false;
+      }
     });
   }
 
-  onEstablecimientoSeleccionado(event: any) {
-  if (event) {
-    this.establecimientos_resumen = this.todosEstablecimientos.filter(h => h.id === event.id);
-  } else {
-    this.establecimientos_resumen = [...this.todosEstablecimientos];
-  }
-}
-
-/*
-  cargarEstablecimiento(){
-    const fechaFormateada = this.commonsService.formatearFecha(this.selectedDate ?? new Date());
-    this.dashboardService.obtenerEstablecimientos(this.paginaActual,fechaFormateada).subscribe(response =>{
-      if (response.count > 0) {
-          this.establecimientos_resumen = response.results.data;
-          this.totalRegistros = response.count;
-          this.userInfoService.establecimientosAsignados = this.establecimientos_resumen;
-      }
-    });    
-  }/*
-
-  /**Cambiar el calendario a espaniol */
-  cambiarCalendarEspaniol(){
-    this.es = {
-      firstDayOfWeek: 1,
-      dayNames: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"],
-      dayNamesShort: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"],
-      dayNamesMin: ["D", "L", "M", "X", "J", "V", "S"],
-      monthNames: [
-        "enero", "febrero", "marzo", "abril", "mayo", "junio",
-        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-      ],
-      monthNamesShort: [
-        "ene", "feb", "mar", "abr", "may", "jun",
-        "jul", "ago", "sep", "oct", "nov", "dic"
-      ],
-      today: 'Hoy',
-      clear: 'Limpiar',
-      weekHeader: 'Sm'
-    };
-
+  porcentajeElenco(elenco: ElencoDashboard, estado: 'activos' | 'inactivos'): number {
+    const totalActivos = this.resumen?.bailarines.totalActivos ?? 0;
+    const totalInactivos = this.resumen?.bailarines.totalInactivos ?? 0;
+    const total = totalActivos + totalInactivos;
+    const value = this.resumen?.bailarines.porElenco[elenco][estado] ?? 0;
+    return total ? Math.max(value / total * 100, value > 0 ? 2 : 0) : 0;
   }
 
-  /**Cambio de fechas 
-  onDateChange(fecha: Date){
-    this.userInfoService.fechaSeleccionadaDashboard = fecha;
-    const fechaFormateada = this.commonsService.formatearFecha(fecha);
-    this.dashboardService.obtenerEstablecimientos(this.paginaActual,fechaFormateada).subscribe(response =>{
-      if (response.count > 0) {
-          this.establecimientos_resumen = response.results.data;
-          // Verifica si al menos un item tiene el mensaje "No hay registros..."
-          const hayMensajeSinDatos = this.establecimientos_resumen.some(item =>
-            Array.isArray(item.registros) &&
-            item.registros.length > 0 &&
-            typeof item.registros[0] === 'object' &&
-            item.registros[0]?.mensaje === constants.SWAL_MESSAGES.SIN_DATOS_EN_FECHA_SELECCIONADA_DASHBOARD_DETAIL
-          );
+  saludo(): string {
+    const hora = this.hoy.getHours();
+    if (hora < 12) return 'Buenos días';
+    if (hora < 19) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
 
-          if (hayMensajeSinDatos) {
-            Swal.fire({
-              icon: 'info',
-              title: constants.SWAL_MESSAGES.SIN_DATOS_EN_FECHA_SELECCIONADA_DASHBOARD_TITLE,
-              text: constants.SWAL_MESSAGES.SIN_DATOS_EN_FECHA_SELECCIONADA_DASHBOARD_DETAIL,
-  customClass: {
-    popup: 'swal-small-popup',
-    title: 'swal-small-title',
-    htmlContainer: 'swal-small-html',
-    icon: 'swal-small-icon',
-    confirmButton: 'swal-small-button'
-  }                 
-            });
-          }
-      }
-      
-    });
-    
-  this.cargarTodosEstablecimientos();
-  }*/
-  
+  get fechaActual(): string {
+    return new Intl.DateTimeFormat('es-EC', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    }).format(this.hoy);
+  }
+
+  get mesActual(): string {
+    return new Intl.DateTimeFormat('es-EC', { month: 'long' }).format(this.hoy);
+  }
+
+  get anioAnterior(): number {
+    return this.hoy.getFullYear() - 1;
+  }
+
 }

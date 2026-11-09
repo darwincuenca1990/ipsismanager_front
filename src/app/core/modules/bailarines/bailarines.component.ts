@@ -115,8 +115,10 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   guardar(value: BailarinFormValue): void {
     this.guardando = true;
     this.error = '';
-    const request = this.bailarinSeleccionado
-      ? this.bailarinesService.actualizar(this.bailarinSeleccionado, value)
+    const bailarinSeleccionado = this.bailarinSeleccionado;
+    const esActualizacion = !!bailarinSeleccionado;
+    const request = bailarinSeleccionado
+      ? this.bailarinesService.actualizar(bailarinSeleccionado, value)
       : this.bailarinesService.crear(value);
 
     request.subscribe({
@@ -124,6 +126,14 @@ export class BailarinesComponent implements OnInit, OnDestroy {
         this.guardando = false;
         this.mostrarFormulario = false;
         this.cargarBailarines();
+        void Swal.fire({
+          title: esActualizacion ? 'Registro actualizado' : 'Registro creado correctamente',
+          text: esActualizacion
+            ? 'El registro se actualizó correctamente.'
+            : 'El registro se creó correctamente.',
+          icon: 'info',
+          confirmButtonText: 'Aceptar'
+        });
       },
       error: err => {
         this.guardando = false;

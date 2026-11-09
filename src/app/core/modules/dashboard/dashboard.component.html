@@ -1,1 +1,151 @@
-<p>dashboard works!</p>
+<main class="dashboard-page">
+	<header class="dashboard-heading">
+		<div>
+			<p class="dashboard-eyebrow">Panel de gestión</p>
+			<h1>{{ saludo() }}, bailarines <span aria-hidden="true">✦</span></h1>
+			<p class="dashboard-subtitle">Un vistazo claro a la actividad y la vida de la agrupación.</p>
+		</div>
+		<div class="dashboard-date">
+			<span class="date-icon"><i class="pi pi-calendar" aria-hidden="true"></i></span>
+			<span>{{ fechaActual }}</span>
+			<button type="button" class="refresh-button" (click)="cargarResumen()" [disabled]="cargando" aria-label="Actualizar resumen" title="Actualizar">
+				<i class="pi pi-refresh" [class.pi-spin]="cargando" aria-hidden="true"></i>
+			</button>
+		</div>
+	</header>
+
+	<div *ngIf="error" class="dashboard-error" role="alert">
+		<i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+		<span>{{ error }}</span>
+		<button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarResumen()">Reintentar</button>
+	</div>
+
+	<section *ngIf="cargando && !resumen" class="dashboard-loading" aria-live="polite">
+		<span class="loading-orbit"><i class="pi pi-chart-bar" aria-hidden="true"></i></span>
+		<strong>Preparando tu resumen…</strong>
+		<span>Estamos reuniendo la información de la agrupación.</span>
+	</section>
+
+	<ng-container *ngIf="resumen as data">
+		<section class="summary-grid" aria-label="Resumen general">
+			<article class="summary-card summary-card-blue">
+				<div class="summary-icon"><i class="pi pi-users" aria-hidden="true"></i></div>
+				<div class="summary-copy"><span>Bailarines activos</span><strong>{{ data.bailarines.totalActivos }}</strong><small>Integrantes vigentes</small></div>
+				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-users"></i></span>
+			</article>
+			<article class="summary-card summary-card-rose">
+				<div class="summary-icon"><i class="pi pi-user-minus" aria-hidden="true"></i></div>
+				<div class="summary-copy"><span>Bailarines inactivos</span><strong>{{ data.bailarines.totalInactivos }}</strong><small>Registros inactivos</small></div>
+				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-user-minus"></i></span>
+			</article>
+			<article class="summary-card summary-card-violet">
+				<div class="summary-icon"><i class="pi pi-gift" aria-hidden="true"></i></div>
+				<div class="summary-copy"><span>Cumpleaños esta semana</span><strong>{{ data.cumpleanosSemana.length }}</strong><small>De lunes a domingo</small></div>
+				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-gift"></i></span>
+			</article>
+			<article class="summary-card summary-card-amber">
+				<div class="summary-icon"><i class="pi pi-star" aria-hidden="true"></i></div>
+				<div class="summary-copy"><span>Cumpleaños en {{ mesActual }}</span><strong>{{ data.cumpleanosMes.length }}</strong><small>Durante este mes</small></div>
+				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-star"></i></span>
+			</article>
+		</section>
+
+		<section class="dashboard-grid main-dashboard-grid">
+			<article class="dashboard-card roster-card">
+				<header class="card-heading">
+					<div class="heading-icon blue-icon"><i class="pi pi-chart-bar" aria-hidden="true"></i></div>
+					<div><h2>Distribución por elenco</h2><p>Activos e inactivos en cada categoría</p></div>
+				</header>
+				<div class="chart-legend">
+					<span><i class="legend-dot active-dot"></i>Activos</span>
+					<span><i class="legend-dot inactive-dot"></i>Inactivos</span>
+				</div>
+				<div class="roster-chart" role="img" aria-label="Gráfico de bailarines por elenco y estado">
+					<div class="roster-column" *ngFor="let elenco of elencos">
+						<div class="bar-pair">
+							<div class="bar-track" [attr.aria-label]="data.bailarines.porElenco[elenco].activos + ' activos'">
+								<span class="roster-bar active-bar" [style.height.%]="porcentajeElenco(elenco, 'activos')"></span>
+								<strong>{{ data.bailarines.porElenco[elenco].activos }}</strong>
+							</div>
+							<div class="bar-track" [attr.aria-label]="data.bailarines.porElenco[elenco].inactivos + ' inactivos'">
+								<span class="roster-bar inactive-bar" [style.height.%]="porcentajeElenco(elenco, 'inactivos')"></span>
+								<strong>{{ data.bailarines.porElenco[elenco].inactivos }}</strong>
+							</div>
+						</div>
+						<span class="roster-label">{{ elenco }}</span>
+					</div>
+				</div>
+				<footer class="chart-note"><i class="pi pi-info-circle" aria-hidden="true"></i> Las variantes “Aspirante” se agrupan con su elenco correspondiente.</footer>
+			</article>
+
+			<article class="dashboard-card birthdays-card">
+				<header class="card-heading">
+					<div class="heading-icon violet-icon"><i class="pi pi-gift" aria-hidden="true"></i></div>
+					<div><h2>Cumpleaños esta semana</h2><p>¡Un buen momento para celebrar!</p></div>
+					<span class="heading-count">{{ data.cumpleanosSemana.length }}</span>
+				</header>
+				<div class="birthday-list" *ngIf="data.cumpleanosSemana.length; else noBirthdaysWeek">
+					<div class="birthday-row" *ngFor="let persona of data.cumpleanosSemana">
+						<span class="birthday-avatar">{{ persona.nombre.charAt(0) }}</span>
+						<span class="birthday-name"><strong>{{ persona.nombre }}</strong><small>{{ persona.elenco }}</small></span>
+						<span class="birthday-date"><i class="pi pi-gift" aria-hidden="true"></i>{{ persona.cumpleanos }}</span>
+					</div>
+				</div>
+				<ng-template #noBirthdaysWeek><div class="empty-birthday"><span>🎈</span><strong>No hay cumpleaños esta semana</strong><small>La próxima celebración está por llegar.</small></div></ng-template>
+			</article>
+		</section>
+
+		<section class="dashboard-grid lower-dashboard-grid">
+			<article class="dashboard-card birthdays-month-card">
+				<header class="card-heading">
+					<div class="heading-icon amber-icon"><i class="pi pi-calendar-plus" aria-hidden="true"></i></div>
+					<div><h2>Cumpleaños de {{ mesActual }}</h2><p>Personas que celebran este mes</p></div>
+					<span class="heading-count amber-count">{{ data.cumpleanosMes.length }}</span>
+				</header>
+				<div class="month-birthday-list" *ngIf="data.cumpleanosMes.length; else noBirthdaysMonth">
+					<div class="month-birthday" *ngFor="let persona of data.cumpleanosMes">
+						<span class="month-day">{{ persona.cumpleanos.split('/')[0] }}</span>
+						<span><strong>{{ persona.nombre }}</strong><small>{{ persona.elenco }}</small></span>
+						<i class="pi pi-arrow-up-right" aria-hidden="true"></i>
+					</div>
+				</div>
+				<ng-template #noBirthdaysMonth><div class="empty-birthday compact-empty"><span>✨</span><strong>Sin cumpleaños este mes</strong><small>Cuando llegue uno, lo verás aquí.</small></div></ng-template>
+			</article>
+
+			<article class="dashboard-card presentations-card">
+				<header class="card-heading">
+					<div class="heading-icon teal-icon"><i class="pi pi-chart-line" aria-hidden="true"></i></div>
+					<div><h2>Presentaciones</h2><p>Comparativas de actividad</p></div>
+					<span class="pending-badge"><i class="pi pi-link" aria-hidden="true"></i> API pendiente</span>
+				</header>
+				<div class="presentation-comparisons">
+					<div class="comparison-panel">
+						<div class="comparison-title"><span>Acumulado hasta hoy</span><i class="pi pi-calendar" aria-hidden="true"></i></div>
+						<div class="comparison-values">
+							<div><strong>—</strong><span>{{ hoy.getFullYear() }}</span></div>
+							<i class="pi pi-arrow-right" aria-hidden="true"></i>
+							<div><strong>—</strong><span>{{ anioAnterior }}</span></div>
+						</div>
+						<div class="comparison-placeholder" aria-label="Gráfico disponible al conectar el servicio de presentaciones">
+							<i class="pi pi-chart-bar" aria-hidden="true"></i><span>Esperando datos de presentaciones</span>
+						</div>
+						<small>Presentaciones de este año vs. el mismo periodo del año anterior</small>
+					</div>
+					<div class="comparison-panel">
+						<div class="comparison-title"><span>Comparativa mensual</span><i class="pi pi-chart-bar" aria-hidden="true"></i></div>
+						<div class="comparison-values">
+							<div><strong>—</strong><span>{{ mesActual }} {{ hoy.getFullYear() }}</span></div>
+							<i class="pi pi-arrow-right" aria-hidden="true"></i>
+							<div><strong>—</strong><span>{{ mesActual }} {{ anioAnterior }}</span></div>
+						</div>
+						<div class="comparison-placeholder monthly-placeholder" aria-label="Gráfico disponible al conectar el servicio de presentaciones">
+							<i class="pi pi-chart-line" aria-hidden="true"></i><span>Esperando datos de presentaciones</span>
+						</div>
+						<small>Presentaciones del mes actual vs. el mismo mes del año anterior</small>
+					</div>
+				</div>
+				<p class="api-note"><i class="pi pi-info-circle" aria-hidden="true"></i> El diseño está preparado; falta conectar el endpoint de presentaciones para mostrar cifras reales.</p>
+			</article>
+		</section>
+	</ng-container>
+</main>
