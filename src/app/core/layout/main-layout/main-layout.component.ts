@@ -130,7 +130,7 @@ export class MainLayoutComponent {
       {
         label: 'Cumpleaños',
         icon: 'pi pi-facebook',
-        //routerLink: '/misRegistros',
+        routerLink: '/cumpleanos',
         routerLinkActiveOptions: { exact: true }
       },
       {
@@ -167,7 +167,7 @@ export class MainLayoutComponent {
       {
         label: 'Cumpleaños',
         icon: 'pi pi-book',
-        //routerLink: '/misRegistros',
+        routerLink: '/cumpleanos',
         routerLinkActiveOptions: { exact: true }
       }                
     ];

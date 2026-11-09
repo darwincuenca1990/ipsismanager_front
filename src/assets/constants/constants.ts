@@ -19,6 +19,9 @@ export const constants = {
                 PATH: '/bailarines/',
                 FOTOGRAFIA: '/{id}/fotografia/'
             },
+            CUMPLEANOS: {
+                PLANTILLAS: '/cumpleanos/plantillas/'
+            },
             /*USERS : {
                 PATH : '/users',
                 CONTROLLERS : {

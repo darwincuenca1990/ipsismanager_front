@@ -1,1 +1,113 @@
-<p>cumpleanos works!</p>
+<main class="templates-page">
+	<header class="page-heading">
+		<div>
+			<p class="eyebrow">Administración</p>
+			<h1>Plantillas de cumpleaños</h1>
+			<p class="subtitle">Personaliza el mensaje que recibe cada elenco en su cumpleaños.</p>
+		</div>
+		<button class="primary-button" type="button" (click)="nuevaPlantilla()">
+			<i class="pi pi-plus" aria-hidden="true"></i>
+			Nueva plantilla
+		</button>
+	</header>
+
+	<section class="templates-card" aria-label="Administración de plantillas">
+		<div class="toolbar">
+			<div>
+				<h2>Mensajes configurados</h2>
+				<span class="count">{{ plantillas.length }} {{ plantillas.length === 1 ? 'plantilla' : 'plantillas' }}</span>
+			</div>
+			<label class="filter-field">
+				<span>Filtrar por elenco</span>
+				<select class="form-select" [value]="filtroElenco" (change)="cambiarFiltro($any($event.target).value)">
+					<option value="">Todos los elencos</option>
+					<option *ngFor="let opcion of opcionesElenco" [value]="opcion.value">{{ opcion.label }}</option>
+				</select>
+			</label>
+		</div>
+
+		<div *ngIf="error" class="error-message" role="alert">
+			<i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ error }}
+		</div>
+
+		<div *ngIf="cargando" class="state-message" role="status">
+			<span class="loader" aria-hidden="true"></span> Cargando plantillas…
+		</div>
+
+		<div *ngIf="!cargando && !error && plantillas.length === 0" class="empty-state">
+			<span class="empty-icon"><i class="pi pi-envelope" aria-hidden="true"></i></span>
+			<h3>No hay plantillas para mostrar</h3>
+			<p>Crea una plantilla para definir el saludo de cumpleaños de un elenco.</p>
+			<button class="secondary-button" type="button" (click)="nuevaPlantilla()">Crear plantilla</button>
+		</div>
+
+		<div *ngIf="!cargando && plantillas.length > 0" class="template-list">
+			<article class="template-row" *ngFor="let plantilla of plantillas">
+				<div class="template-icon" aria-hidden="true"><i class="pi pi-gift"></i></div>
+				<div class="template-content">
+					<div class="template-title-line">
+						<h3>{{ plantilla.elenco_display || etiquetaElenco(plantilla.elenco) }}</h3>
+						<span class="status-pill" [class.status-inactive]="!plantilla.activa">
+							<span class="status-dot"></span>{{ plantilla.activa ? 'Activa' : 'Inactiva' }}
+						</span>
+					</div>
+					<p class="template-message">{{ plantilla.mensaje }}</p>
+					<small class="token-hint">La variable <code>{{ '{nombre}' }}</code> se reemplaza por el nombre del bailarín.</small>
+				</div>
+				<div class="row-actions">
+					<button type="button" class="icon-button edit-button" (click)="editarPlantilla(plantilla)" [attr.aria-label]="'Editar plantilla de ' + plantilla.elenco_display" title="Editar">
+						<i class="pi pi-pencil" aria-hidden="true"></i>
+					</button>
+					<button type="button" class="icon-button delete-button" (click)="eliminarPlantilla(plantilla)" [disabled]="eliminandoId === plantilla.id" [attr.aria-label]="'Eliminar plantilla de ' + plantilla.elenco_display" title="Eliminar">
+						<i class="pi pi-trash" aria-hidden="true"></i>
+					</button>
+				</div>
+			</article>
+		</div>
+	</section>
+</main>
+
+<div *ngIf="mostrarFormulario" class="modal-backdrop" (click)="cerrarFormulario()">
+	<section class="form-modal" role="dialog" aria-modal="true" [attr.aria-label]="plantillaSeleccionada ? 'Editar plantilla' : 'Crear plantilla'" (click)="$event.stopPropagation()">
+		<header class="modal-heading">
+			<div>
+				<p class="eyebrow">Plantilla de mensaje</p>
+				<h2>{{ plantillaSeleccionada ? 'Editar plantilla' : 'Nueva plantilla' }}</h2>
+			</div>
+			<button type="button" class="close-button" (click)="cerrarFormulario()" [disabled]="guardando" aria-label="Cerrar">&times;</button>
+		</header>
+
+		<form [formGroup]="form" (ngSubmit)="guardar()">
+			<div class="form-body">
+				<div *ngIf="error" class="error-message form-error" role="alert">{{ error }}</div>
+				<label class="form-field">
+					<span>Elenco <b>*</b></span>
+					<select class="form-select" formControlName="elenco">
+						<option *ngFor="let opcion of opcionesElenco" [value]="opcion.value">{{ opcion.label }}</option>
+					</select>
+				</label>
+				<label class="form-field">
+					<span>Mensaje <b>*</b></span>
+						<textarea #mensajeInput class="form-control message-input" formControlName="mensaje" rows="6" placeholder="Escribe el saludo de cumpleaños…"></textarea>
+						<small class="field-hint">Incluye <code>{{ '{nombre}' }}</code> donde quieras insertar el nombre del bailarín.</small>
+						<small class="counter" [class.counter-error]="form.controls.mensaje.invalid && form.controls.mensaje.touched">{{ form.controls.mensaje.value.length }} caracteres</small>
+					<small *ngIf="form.controls.mensaje.hasError('required') && form.controls.mensaje.touched" class="validation-error">El mensaje es obligatorio.</small>
+				</label>
+				<button class="insert-token" type="button" (click)="insertarNombre(mensajeInput)">
+						<i class="pi pi-user-plus" aria-hidden="true"></i> Agregar variable {{ '{nombre}' }}
+				</button>
+				<label class="active-toggle">
+					<input type="checkbox" formControlName="activa">
+					<span><strong>Plantilla activa</strong><small>Solo las plantillas activas estarán disponibles para enviar.</small></span>
+				</label>
+			</div>
+			<footer class="modal-actions">
+				<button type="button" class="secondary-button" (click)="cerrarFormulario()" [disabled]="guardando">Cancelar</button>
+				<button type="submit" class="primary-button" [disabled]="guardando">
+					<i *ngIf="guardando" class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+					{{ guardando ? 'Guardando…' : (plantillaSeleccionada ? 'Guardar cambios' : 'Crear plantilla') }}
+				</button>
+			</footer>
+		</form>
+	</section>
+</div>

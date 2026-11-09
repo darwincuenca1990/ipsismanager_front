@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { PlantillasCumpleanosService } from '../../services/plantillas-cumpleanos.service';
 
 import { CumpleanosComponent } from './cumpleanos.component';
 
@@ -8,7 +10,10 @@ describe('CumpleanosComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CumpleanosComponent]
+      imports: [CumpleanosComponent],
+      providers: [
+        { provide: PlantillasCumpleanosService, useValue: { listar: () => of([]) } }
+      ]
     })
     .compileComponents();
     
