@@ -29,7 +29,12 @@ export class CumpleanosComponent implements OnInit {
   guardando = false;
   eliminandoId: number | null = null;
   mostrarFormulario = false;
+  probandoDetector = false;
+  detectorEjecutado = false;
+  urlsDescargando = new Set<string>();
   plantillaSeleccionada: PlantillaCumpleanos | null = null;
+  resultadoDetector: unknown = null;
+  urlsTarjetasGeneradas: string[] = [];
   error = '';
 
   readonly form = this.fb.nonNullable.group({
@@ -65,6 +70,29 @@ export class CumpleanosComponent implements OnInit {
   cambiarFiltro(elenco: string): void {
     this.filtroElenco = elenco as ElencoPlantilla | '';
     this.cargarPlantillas();
+  }
+
+  probarDetector(): void {
+    if (this.probandoDetector) return;
+
+    this.probandoDetector = true;
+    this.detectorEjecutado = false;
+    this.resultadoDetector = null;
+    this.urlsTarjetasGeneradas = [];
+    this.error = '';
+    this.plantillasService.ejecutarDetector().subscribe({
+      next: resultado => {
+        this.resultadoDetector = resultado;
+        this.urlsTarjetasGeneradas = this.extraerUrlsTarjetas(resultado);
+        this.detectorEjecutado = true;
+        this.probandoDetector = false;
+        this.urlsTarjetasGeneradas.forEach(url => this.descargarTarjeta(url));
+      },
+      error: error => {
+        this.error = this.mensajeError(error, 'No se pudo ejecutar el detector de afiches.');
+        this.probandoDetector = false;
+      }
+    });
   }
 
   nuevaPlantilla(): void {
@@ -167,6 +195,60 @@ export class CumpleanosComponent implements OnInit {
     control.markAsDirty();
     textarea.focus();
     textarea.setSelectionRange(inicio + 8, inicio + 8);
+  }
+
+  private extraerUrlsTarjetas(resultado: unknown): string[] {
+    const urls = new Set<string>();
+    const visitar = (valor: unknown, clave = ''): void => {
+      if (Array.isArray(valor)) {
+        valor.forEach(item => visitar(item, clave));
+        return;
+      }
+      if (!valor || typeof valor !== 'object') {
+        if (
+          typeof valor === 'string'
+          && /url|tarjeta|afiche|imagen|image|jpeg/i.test(clave)
+          && /^(https?:\/\/|\/)/i.test(valor)
+        ) {
+          urls.add(this.plantillasService.resolverUrlTarjeta(valor));
+        }
+        return;
+      }
+
+      Object.entries(valor).forEach(([nombre, contenido]) => visitar(contenido, nombre));
+    };
+
+    visitar(resultado);
+    return [...urls];
+  }
+
+  descargarTarjeta(url: string): void {
+    if (this.urlsDescargando.has(url)) return;
+    this.urlsDescargando.add(url);
+
+    this.plantillasService.descargarTarjeta(url).subscribe({
+      next: archivo => {
+        const enlaceTemporal = URL.createObjectURL(archivo);
+        const enlace = document.createElement('a');
+        enlace.href = enlaceTemporal;
+        enlace.download = this.nombreArchivoTarjeta(url);
+        enlace.style.display = 'none';
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+        window.setTimeout(() => URL.revokeObjectURL(enlaceTemporal), 1000);
+        this.urlsDescargando.delete(url);
+      },
+      error: error => {
+        this.urlsDescargando.delete(url);
+        this.error = this.mensajeError(error, 'No se pudo descargar la tarjeta. Puedes intentar nuevamente desde el resultado.');
+      }
+    });
+  }
+
+  private nombreArchivoTarjeta(url: string): string {
+    const nombre = new URL(url).pathname.split('/').pop();
+    return nombre ? decodeURIComponent(nombre) : 'tarjeta-cumpleanos.jpeg';
   }
 
   private mensajeError(error: any, fallback: string): string {

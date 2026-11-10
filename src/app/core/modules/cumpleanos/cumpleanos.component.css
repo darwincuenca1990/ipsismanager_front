@@ -21,6 +21,7 @@
 .page-heading h1,
 .modal-heading h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 750; }
 .subtitle { margin: .35rem 0 0; color: #64748b; }
+.heading-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .65rem; }
 
 .primary-button,
 .secondary-button {
@@ -40,6 +41,8 @@
 .primary-button:hover:not(:disabled) { background: #1e40af; }
 .secondary-button { border: 1px solid #dbe2ea; color: #334155; background: #fff; }
 .secondary-button:hover:not(:disabled) { background: #f8fafc; }
+.test-button { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 2.65rem; padding: .65rem 1rem; border: 1px solid #c4b5fd; border-radius: .65rem; color: #6d28d9; background: #f5f3ff; font: inherit; font-size: .88rem; font-weight: 650; }
+.test-button:hover:not(:disabled) { border-color: #a78bfa; background: #ede9fe; }
 button:disabled { cursor: not-allowed; opacity: .65; }
 
 .templates-card { overflow: hidden; border: 1px solid #e5eaf2; border-radius: 1rem; background: #fff; box-shadow: 0 10px 28px rgb(15 23 42 / 5%); }
@@ -54,6 +57,27 @@ button:disabled { cursor: not-allowed; opacity: .65; }
 .state-message { display: flex; align-items: center; justify-content: center; gap: .75rem; }
 .loader { width: 1.25rem; height: 1.25rem; border: 2px solid #dbeafe; border-top-color: #2563eb; border-radius: 50%; animation: spin .75s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.detector-progress,
+.detector-result { margin-bottom: 1rem; padding: 1.1rem 1.25rem; border: 1px solid #ddd6fe; border-radius: .85rem; background: #faf8ff; }
+.detector-progress { display: flex; align-items: center; justify-content: center; gap: .8rem; color: #5b21b6; }
+.detector-progress small { display: block; margin-top: .2rem; color: #7c6f9b; }
+.detector-result { border-color: #bbf7d0; background: #f0fdf4; }
+.detector-result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.detector-result-heading h2 { margin: 0; color: #166534; font-size: 1.1rem; font-weight: 700; }
+.result-close { width: 2rem; height: 2rem; border: 0; border-radius: .5rem; color: #64748b; background: transparent; font-size: 1.5rem; }
+.result-close:hover { background: #dcfce7; }
+.generated-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.generated-card { overflow: hidden; border: 1px solid #dcfce7; border-radius: .7rem; background: #fff; }
+.generated-card img { display: block; width: 100%; max-height: 300px; object-fit: contain; background: #f8fafc; }
+.generated-actions { padding: .15rem .75rem .65rem; }
+.generated-link { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem 0; color: #166534; font-size: .82rem; font-weight: 650; text-decoration: none; }
+.generated-link:hover { text-decoration: underline; }
+.download-button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; width: 100%; padding: .5rem .65rem; border: 1px solid #bbf7d0; border-radius: .5rem; color: #166534; background: #f0fdf4; font: inherit; font-size: .8rem; font-weight: 650; }
+.download-button:hover:not(:disabled) { background: #dcfce7; }
+.result-note { margin: 1rem 0 0; color: #475569; font-size: .88rem; }
+.raw-result { margin-top: 1rem; border-top: 1px solid #dcfce7; padding-top: .75rem; color: #475569; font-size: .83rem; }
+.raw-result summary { cursor: pointer; font-weight: 650; }
+.raw-result pre { max-height: 250px; overflow: auto; margin: .75rem 0 0; padding: .8rem; border-radius: .55rem; color: #334155; background: #fff; font-size: .75rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 .empty-icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; border-radius: 1rem; color: #2563eb; background: #eff6ff; font-size: 1.4rem; }
 .empty-state h3 { margin: 0; color: #1e293b; font-size: 1.1rem; }
 .empty-state p { margin: .5rem 0 1.25rem; }
@@ -108,7 +132,7 @@ button:disabled { cursor: not-allowed; opacity: .65; }
 @media (max-width: 640px) {
 	.page-heading,
 	.toolbar { align-items: stretch; flex-direction: column; }
-	.page-heading .primary-button { align-self: stretch; }
+	.heading-actions { display: grid; grid-template-columns: 1fr; }
 	.filter-field { width: 100%; }
 	.template-list { padding: 0 1rem; }
 	.template-row { flex-wrap: wrap; }

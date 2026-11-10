@@ -4,5 +4,11 @@
         "secure" : false,
         "loglevel": "debug",
         "changeOrigin": true
+    },
+    "/media": {
+        "target": "http://localhost:8005",
+        "secure": false,
+        "loglevel": "debug",
+        "changeOrigin": true
     }
 }

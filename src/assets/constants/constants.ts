@@ -20,7 +20,8 @@ export const constants = {
                 FOTOGRAFIA: '/{id}/fotografia/'
             },
             CUMPLEANOS: {
-                PLANTILLAS: '/cumpleanos/plantillas/'
+                PLANTILLAS: '/cumpleanos/plantillas/',
+                DETECTOR: '/cumpleanos/detector/'
             },
             /*USERS : {
                 PATH : '/users',
