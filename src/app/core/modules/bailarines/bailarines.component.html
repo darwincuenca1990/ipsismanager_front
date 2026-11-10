@@ -11,7 +11,79 @@
 		</button>
 	</header>
 
-	<section class="list-card" aria-label="Listado de bailarines">
+	<nav class="view-tabs" role="tablist">
+		<button type="button" role="tab" class="view-tab" [class.active]="vista === 'listado'" [attr.aria-selected]="vista === 'listado'" (click)="seleccionarVista('listado')">
+			<i class="pi pi-users" aria-hidden="true"></i> Listado
+		</button>
+		<button type="button" role="tab" class="view-tab" [class.active]="vista === 'candidatos'" [attr.aria-selected]="vista === 'candidatos'" (click)="seleccionarVista('candidatos')">
+			<i class="pi pi-star" aria-hidden="true"></i> Candidatos a Planta
+		</button>
+	</nav>
+
+	<section *ngIf="vista === 'candidatos'" class="list-card" aria-label="Candidatos al elenco de planta">
+		<div class="list-toolbar">
+			<div>
+				<h2>Futuros danzantes del elenco de planta</h2>
+				<span class="total-count">{{ candidatos.length }} {{ candidatos.length === 1 ? 'candidato' : 'candidatos' }}</span>
+			</div>
+			<p class="candidate-note" *ngIf="fechaLimiteCandidatos">
+				<i class="pi pi-info-circle" aria-hidden="true"></i>
+				Bailarines infantiles que cumplen 14 años hasta el {{ formatearFecha(fechaLimiteCandidatos) }}.
+			</p>
+		</div>
+
+		<div *ngIf="errorCandidatos" class="alert alert-danger" role="alert">{{ errorCandidatos }}</div>
+
+		<div class="table-scroll">
+			<table class="table dancer-table align-middle mb-0">
+				<thead>
+					<tr>
+						<th scope="col" class="photo-heading">Foto</th>
+						<th scope="col">Bailarín</th>
+						<th scope="col">Edad actual</th>
+						<th scope="col">Cumple 14 años</th>
+						<th scope="col">Ingreso a la agrupación</th>
+						<th scope="col">Representante</th>
+						<th scope="col">Celular</th>
+						<th scope="col" class="actions-heading">Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr *ngIf="cargandoCandidatos">
+						<td colspan="8" class="empty-state loading-cell">
+							<p-progressSpinner ariaLabel="Cargando candidatos" [style]="{ width: '2.5rem', height: '2.5rem' }" strokeWidth="5"></p-progressSpinner>
+							<span>Cargando candidatos…</span>
+						</td>
+					</tr>
+					<tr *ngFor="let bailarin of candidatos">
+						<td class="photo-cell">
+							<img *ngIf="fotografiaUrl(bailarin) as fotoUrl; else fotoCandidato" [src]="fotoUrl" [alt]="'Fotografía de ' + bailarin.nombres" class="dancer-thumbnail">
+							<ng-template #fotoCandidato><span class="dancer-avatar-placeholder" aria-label="Sin fotografía"><i class="pi pi-user" aria-hidden="true"></i></span></ng-template>
+						</td>
+						<td>
+							<div class="dancer-name">{{ bailarin.apellidos }} {{ bailarin.nombres }}</div>
+							<small class="muted">{{ bailarin.cedula }}</small>
+						</td>
+						<td>{{ edadActual(bailarin) ?? '—' }} años</td>
+						<td><span class="status-pill status-yes">{{ fechaCumple14(bailarin) }}</span></td>
+						<td>{{ formatearFecha(bailarin.inscripcion?.fecha_ingreso_agrupacion ?? bailarin.fecha_ingreso_agrupacion ?? null) || '—' }}</td>
+						<td>{{ nombreRepresentante(bailarin) }}</td>
+						<td>{{ bailarin.celular || '—' }}</td>
+						<td class="actions-cell">
+							<button type="button" class="icon-action view-action" (click)="ver(bailarin)" aria-label="Ver datos del bailarín" title="Ver">
+								<i class="pi pi-eye" aria-hidden="true"></i>
+							</button>
+						</td>
+					</tr>
+					<tr *ngIf="!cargandoCandidatos && candidatos.length === 0">
+						<td colspan="8" class="empty-state">No hay bailarines infantiles próximos a pasar al elenco de planta.</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	<section *ngIf="vista === 'listado'" class="list-card" aria-label="Listado de bailarines">
 		<div class="list-toolbar">
 			<div>
 				<h2>Listado</h2>

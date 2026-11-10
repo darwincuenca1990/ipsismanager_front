@@ -160,6 +160,14 @@
 
 .summary-link { cursor: pointer; }
 
+.card-clickable { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.card-clickable:hover,
+.card-clickable:focus-visible {
+	transform: translateY(-3px);
+	box-shadow: 0 14px 30px rgb(22 43 77 / 12%);
+	outline: none;
+}
+
 .summary-link:hover,
 .summary-link:focus-visible {
 	transform: translateY(-4px);

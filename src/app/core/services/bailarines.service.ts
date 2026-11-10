@@ -72,11 +72,29 @@ export interface FiltrosBailarines {
   estado: 'ACTIVO' | 'INACTIVO';
 }
 
+export interface CandidatosPlanta {
+  fecha_actual: string | null;
+  fecha_limite: string | null;
+  data: Bailarin[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class BailarinesService {
   private readonly apiUrl = constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT;
 
   constructor(private readonly http: HttpClient) {}
+
+  listarCandidatosPlanta(): Observable<CandidatosPlanta> {
+    return this.http.get<Partial<CandidatosPlanta> | Bailarin[]>(`${this.apiUrl}/bailarines/candidatos-elenco-planta/`).pipe(
+      map(response => Array.isArray(response)
+        ? { fecha_actual: null, fecha_limite: null, data: response }
+        : {
+            fecha_actual: response?.fecha_actual ?? null,
+            fecha_limite: response?.fecha_limite ?? null,
+            data: response?.data ?? []
+          })
+    );
+  }
 
   listar(filtros: FiltrosBailarines): Observable<any> {
     const params = new HttpParams()

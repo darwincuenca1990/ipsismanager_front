@@ -28,6 +28,11 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   error = '';
   bailarinSeleccionado: Bailarin | null = null;
   bailarinDetalle: Bailarin | null = null;
+  vista: 'listado' | 'candidatos' = 'listado';
+  candidatos: Bailarin[] = [];
+  fechaLimiteCandidatos: string | null = null;
+  cargandoCandidatos = false;
+  errorCandidatos = '';
   private solicitudesFoto: Subscription[] = [];
 
   constructor(
@@ -48,6 +53,66 @@ export class BailarinesComponent implements OnInit, OnDestroy {
       this.filtroElenco = elenco as Elenco;
     }
     this.cargarBailarines();
+    if (this.route.snapshot.queryParamMap.get('vista') === 'candidatos') this.seleccionarVista('candidatos');
+  }
+
+  seleccionarVista(vista: 'listado' | 'candidatos'): void {
+    this.vista = vista;
+    if (vista === 'candidatos') this.cargarCandidatos();
+  }
+
+  cargarCandidatos(): void {
+    this.cargandoCandidatos = true;
+    this.errorCandidatos = '';
+    this.bailarinesService.listarCandidatosPlanta().subscribe({
+      next: respuesta => {
+        this.candidatos = [...respuesta.data].sort((a, b) => (a.fecha_nacimiento ?? '').localeCompare(b.fecha_nacimiento ?? ''));
+        this.fechaLimiteCandidatos = respuesta.fecha_limite;
+        this.cargandoCandidatos = false;
+        this.cargarFotografiasCandidatos(this.candidatos);
+      },
+      error: () => {
+        this.errorCandidatos = 'No se pudieron cargar los candidatos al elenco de planta.';
+        this.cargandoCandidatos = false;
+      }
+    });
+  }
+
+  edadActual(bailarin: Bailarin): number | null {
+    const [y, m, d] = (bailarin.fecha_nacimiento ?? '').slice(0, 10).split('-').map(Number);
+    if (!y || !m || !d) return null;
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - y;
+    if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) edad--;
+    return edad;
+  }
+
+  fechaCumple14(bailarin: Bailarin): string {
+    const [y, m, d] = (bailarin.fecha_nacimiento ?? '').slice(0, 10).split('-');
+    return y ? `${d}/${m}/${Number(y) + 14}` : '—';
+  }
+
+  formatearFecha(fecha: string | null): string {
+    if (!fecha) return '';
+    const [y, m, d] = fecha.slice(0, 10).split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  private cargarFotografiasCandidatos(bailarines: Bailarin[]): void {
+    bailarines
+      .filter(b => !!(b.fotografia || b.fotografia_drive_id) && !this.fotoUrlPorId[b.id])
+      .forEach(b => {
+        this.solicitudesFoto.push(this.bailarinesService.obtenerFotografia(b.id).subscribe({
+          next: blob => {
+            if (blob.size && typeof URL !== 'undefined' && URL.createObjectURL) {
+              this.fotoUrlPorId[b.id] = URL.createObjectURL(blob);
+            }
+          },
+          error: () => {
+            // Se conserva el avatar genérico.
+          }
+        }));
+      });
   }
 
   ngOnDestroy(): void {

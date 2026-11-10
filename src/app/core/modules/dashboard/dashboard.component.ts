@@ -1,6 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { DashboardService, ElencoDashboard, PresentacionesResumen, ResumenDashboard } from '../../services/dashboard.service';
 
@@ -24,8 +24,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly dashboardService: DashboardService,
+    private readonly router: Router,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
+
+  irACumpleanos(sub: 'semana' | 'mes'): void {
+    void this.router.navigate(['/cumpleanos'], { queryParams: { tab: 'planificacion', sub } });
+  }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) this.cargarResumen();

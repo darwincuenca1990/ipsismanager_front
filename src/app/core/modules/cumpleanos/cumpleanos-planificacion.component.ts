@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { BailarinesService } from '../../services/bailarines.service';
 import {
@@ -32,19 +33,28 @@ export class CumpleanosPlanificacionComponent implements OnInit, OnDestroy {
   cargando = false;
   error = '';
   private subscription?: Subscription;
+  private paramsSubscription?: Subscription;
   private solicitudesFoto: Subscription[] = [];
   fotoUrlPorId: Record<number, string> = {};
 
   constructor(
     private readonly service: PlantillasCumpleanosService,
-    private readonly bailarinesService: BailarinesService
+    private readonly bailarinesService: BailarinesService,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.cargar();
+    this.paramsSubscription = this.route.queryParamMap.subscribe(params => {
+      const sub = params.get('sub') === 'mes' ? 'mes' : 'semana';
+      if (sub !== this.subTab || !this.periodo) {
+        this.subTab = sub;
+        this.cargar();
+      }
+    });
   }
 
   ngOnDestroy(): void {
+    this.paramsSubscription?.unsubscribe();
     this.subscription?.unsubscribe();
     this.limpiarFotografias();
   }

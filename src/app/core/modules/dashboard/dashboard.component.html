@@ -40,13 +40,13 @@
 				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
 				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-user-minus"></i></span>
 			</a>
-			<a class="summary-card summary-card-violet summary-link" routerLink="/cumpleanos" title="Ir a cumpleaños">
+			<a class="summary-card summary-card-violet summary-link" routerLink="/cumpleanos" [queryParams]="{ tab: 'planificacion', sub: 'semana' }" title="Ver cumpleaños de la semana">
 				<div class="summary-icon"><i class="pi pi-gift" aria-hidden="true"></i></div>
 				<div class="summary-copy"><span>Cumpleaños esta semana</span><strong>{{ data.cumpleanosSemana.length }}</strong><small>De lunes a domingo</small></div>
 				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
 				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-gift"></i></span>
 			</a>
-			<a class="summary-card summary-card-amber summary-link" routerLink="/cumpleanos" title="Ir a cumpleaños">
+			<a class="summary-card summary-card-amber summary-link" routerLink="/cumpleanos" [queryParams]="{ tab: 'planificacion', sub: 'mes' }" title="Ver cumpleaños del mes">
 				<div class="summary-icon"><i class="pi pi-star" aria-hidden="true"></i></div>
 				<div class="summary-copy"><span>Cumpleaños en {{ mesActual }}</span><strong>{{ data.cumpleanosMes.length }}</strong><small>Durante este mes</small></div>
 				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
@@ -97,7 +97,7 @@
 				<footer class="chart-note"><i class="pi pi-info-circle" aria-hidden="true"></i> Las variantes “Aspirante” se agrupan con su elenco correspondiente.</footer>
 			</article>
 
-			<article class="dashboard-card birthdays-card">
+			<article class="dashboard-card birthdays-card card-clickable" role="link" tabindex="0" title="Ver cumpleaños de la semana" (click)="irACumpleanos('semana')" (keydown.enter)="irACumpleanos('semana')">
 				<header class="card-heading">
 					<div class="heading-icon violet-icon"><i class="pi pi-gift" aria-hidden="true"></i></div>
 					<div><h2>Cumpleaños esta semana</h2><p>¡Un buen momento para celebrar!</p></div>
@@ -115,7 +115,7 @@
 		</section>
 
 		<section class="dashboard-grid lower-dashboard-grid">
-			<article class="dashboard-card birthdays-month-card">
+			<article class="dashboard-card birthdays-month-card card-clickable" role="link" tabindex="0" title="Ver cumpleaños del mes" (click)="irACumpleanos('mes')" (keydown.enter)="irACumpleanos('mes')">
 				<header class="card-heading">
 					<div class="heading-icon amber-icon"><i class="pi pi-calendar-plus" aria-hidden="true"></i></div>
 					<div><h2>Cumpleaños de {{ mesActual }}</h2><p>Personas que celebran este mes</p></div>
