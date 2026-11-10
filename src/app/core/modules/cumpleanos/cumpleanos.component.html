@@ -1,52 +1,42 @@
 <main class="templates-page">
-	<header class="page-heading">
-		<div>
-			<p class="eyebrow">Administración</p>
-			<h1>Plantillas de cumpleaños</h1>
-			<p class="subtitle">Personaliza el mensaje que recibe cada elenco en su cumpleaños.</p>
-		</div>
-		<div class="heading-actions">
-			<button class="test-button" type="button" (click)="probarDetector()" [disabled]="probandoDetector">
-				<i [class]="probandoDetector ? 'pi pi-spin pi-spinner' : 'pi pi-bolt'" aria-hidden="true"></i>
-				{{ probandoDetector ? 'Generando afiches…' : 'Probar detector' }}
-			</button>
-			<button class="primary-button" type="button" (click)="nuevaPlantilla()">
-				<i class="pi pi-plus" aria-hidden="true"></i>
-				Nueva plantilla
-			</button>
-		</div>
-	</header>
+	<nav class="section-tabs" role="tablist">
+		<button
+			role="tab"
+			[attr.aria-selected]="seccionActiva === 'plantillas'"
+			(click)="cambiarSeccion('plantillas')"
+			[class.tab-active]="seccionActiva === 'plantillas'"
+			class="section-tab"
+		>
+			<i class="pi pi-gift" aria-hidden="true"></i>
+			Plantillas
+		</button>
+		<button
+			role="tab"
+			[attr.aria-selected]="seccionActiva === 'administrador'"
+			(click)="cambiarSeccion('administrador')"
+			[class.tab-active]="seccionActiva === 'administrador'"
+			class="section-tab"
+		>
+			<i class="pi pi-cog" aria-hidden="true"></i>
+			Administración
+		</button>
+	</nav>
 
-	<section *ngIf="probandoDetector" class="detector-progress" role="status" aria-live="polite">
-		<span class="loader" aria-hidden="true"></span>
-		<div><strong>Generando afiches</strong><small>El detector está revisando las tarjetas y descargando las fotografías necesarias.</small></div>
-	</section>
-
-	<section *ngIf="detectorEjecutado" class="detector-result" aria-live="polite">
-		<div class="detector-result-heading">
-			<div><p class="eyebrow">Resultado de la prueba</p><h2>Detector ejecutado correctamente</h2></div>
-			<button type="button" class="result-close" (click)="detectorEjecutado = false" aria-label="Cerrar resultado">&times;</button>
-		</div>
-		<div *ngIf="urlsTarjetasGeneradas.length" class="generated-cards">
-			<article class="generated-card" *ngFor="let url of urlsTarjetasGeneradas; let i = index">
-				<a [href]="url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'Abrir tarjeta de cumpleaños generada ' + (i + 1)">
-					<img [src]="url" [alt]="'Tarjeta de cumpleaños generada ' + (i + 1)" loading="lazy">
-				</a>
-				<div class="generated-actions">
-					<a class="generated-link" [href]="url" target="_blank" rel="noopener noreferrer">Ver tarjeta {{ i + 1 }} <i class="pi pi-external-link" aria-hidden="true"></i></a>
-					<button class="download-button" type="button" (click)="descargarTarjeta(url)" [disabled]="urlsDescargando.has(url)">
-						<i [class]="urlsDescargando.has(url) ? 'pi pi-spin pi-spinner' : 'pi pi-download'" aria-hidden="true"></i>
-						{{ urlsDescargando.has(url) ? 'Descargando…' : 'Descargar' }}
-					</button>
-				</div>
-			</article>
-		</div>
-		<p *ngIf="!urlsTarjetasGeneradas.length" class="result-note">La solicitud terminó correctamente. No se encontró una URL de imagen reconocible; revisa la respuesta del servidor.</p>
-		<details class="raw-result">
-			<summary>Ver respuesta del servidor</summary>
-			<pre>{{ resultadoDetector | json }}</pre>
-		</details>
-	</section>
+	<!-- Sección de Plantillas -->
+	<section *ngIf="seccionActiva === 'plantillas'" role="tabpanel">
+		<header class="page-heading">
+			<div>
+				<p class="eyebrow">Administración</p>
+				<h1>Plantillas de cumpleaños</h1>
+				<p class="subtitle">Personaliza el mensaje que recibe cada elenco en su cumpleaños.</p>
+			</div>
+			<div class="heading-actions">
+				<button class="primary-button" type="button" (click)="nuevaPlantilla()">
+					<i class="pi pi-plus" aria-hidden="true"></i>
+					Nueva plantilla
+				</button>
+			</div>
+		</header>
 
 	<section class="templates-card" aria-label="Administración de plantillas">
 		<div class="toolbar">
@@ -101,6 +91,12 @@
 				</div>
 			</article>
 		</div>
+	</section>
+</section>
+
+	<!-- Sección de Administración -->
+	<section *ngIf="seccionActiva === 'administrador'" role="tabpanel">
+		<app-cumpleanos-administrador></app-cumpleanos-administrador>
 	</section>
 </main>
 

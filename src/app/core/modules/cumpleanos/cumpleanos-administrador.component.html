@@ -1,0 +1,454 @@
+<main class="admin-page">
+	<header class="page-heading">
+		<div>
+			<p class="eyebrow">Administración</p>
+			<h1>Gestión de afiches de cumpleaños</h1>
+			<p class="subtitle">Genera manualmente afiches no generados y publica en redes sociales.</p>
+		</div>
+		<div class="heading-actions">
+			<button class="test-button" type="button" (click)="probarDetector()" [disabled]="probandoDetector">
+				<i [class]="probandoDetector ? 'pi pi-spin pi-spinner' : 'pi pi-bolt'" aria-hidden="true"></i>
+				{{ probandoDetector ? 'Generando afiches…' : 'Probar detector' }}
+			</button>
+			<button class="primary-button" type="button" (click)="cargarTarjetas()" [disabled]="cargando">
+				<i [class]="cargando ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'" aria-hidden="true"></i>
+				{{ cargando ? 'Actualizando…' : 'Actualizar' }}
+			</button>
+		</div>
+	</header>
+
+	<div *ngIf="error" class="error-message" role="alert">
+		<i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ error }}
+	</div>
+
+	<section *ngIf="probandoDetector" class="detector-progress" role="status" aria-live="polite">
+		<span class="loader" aria-hidden="true"></span>
+		<div><strong>Generando afiches</strong><small>El detector está revisando las tarjetas y descargando las fotografías necesarias.</small></div>
+	</section>
+
+	<section *ngIf="detectorEjecutado && resultadoDetector" class="detector-result" aria-live="polite">
+		<div class="detector-result-heading">
+			<div><p class="eyebrow">Resultado de la prueba</p><h2>Detector ejecutado correctamente</h2></div>
+			<button type="button" class="result-close" (click)="cerrarResultadoDetector()" aria-label="Cerrar resultado">&times;</button>
+		</div>
+
+		<div class="detector-summary">
+			<div class="summary-stats">
+				<div class="stat-item" *ngIf="resultadoDetector.generadas.length > 0">
+					<span class="stat-label">Afiches generados</span>
+					<span class="stat-value" [class.value-success]="true">{{ resultadoDetector.generadas.length }}</span>
+				</div>
+				<div class="stat-item" *ngIf="resultadoDetector.ya_existentes.length > 0">
+					<span class="stat-label">Ya existentes</span>
+					<span class="stat-value" [class.value-info]="true">{{ resultadoDetector.ya_existentes.length }}</span>
+				</div>
+				<div class="stat-item" *ngIf="resultadoDetector.omitidas.length > 0">
+					<span class="stat-label">Omitidas</span>
+					<span class="stat-value" [class.value-warning]="true">{{ resultadoDetector.omitidas.length }}</span>
+				</div>
+			</div>
+
+			<div class="detector-sections">
+				<!-- Afiches Generados -->
+				<div *ngIf="resultadoDetector.generadas.length > 0" class="detector-section">
+					<h3 class="section-title success"><i class="pi pi-check-circle" aria-hidden="true"></i> Afiches generados</h3>
+					<div class="messages-list">
+						<div class="message-item success" *ngFor="let item of resultadoDetector.generadas">
+							<div class="message-header">
+								<strong>{{ item.bailarin }}</strong>
+							</div>
+							<p class="message-text">{{ item.mensaje }}</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Ya Existentes -->
+				<div *ngIf="resultadoDetector.ya_existentes.length > 0" class="detector-section">
+					<h3 class="section-title info"><i class="pi pi-info-circle" aria-hidden="true"></i> Afiches ya existentes</h3>
+					<div class="messages-list">
+						<div class="message-item info" *ngFor="let item of resultadoDetector.ya_existentes">
+							<div class="message-header">
+								<strong>{{ item.bailarin }}</strong>
+							</div>
+							<p class="message-text">{{ item.mensaje }}</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Omitidas -->
+				<div *ngIf="resultadoDetector.omitidas.length > 0" class="detector-section">
+					<h3 class="section-title warning"><i class="pi pi-exclamation-circle" aria-hidden="true"></i> Afiches omitidos</h3>
+					<div class="messages-list">
+						<div class="message-item warning" *ngFor="let item of resultadoDetector.omitidas">
+							<div class="message-header">
+								<strong>{{ item.bailarin }}</strong>
+							</div>
+							<p class="message-text">{{ item.mensaje }}</p>
+							<div class="motivos-list" *ngIf="item.motivos && item.motivos.length > 0">
+								<span class="motivo-tag" *ngFor="let motivo of item.motivos">{{ motivo }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<details class="raw-result">
+				<summary>Ver respuesta completa del servidor</summary>
+				<pre>{{ resultadoDetector | json }}</pre>
+			</details>
+		</div>
+	</section>
+
+	<nav class="admin-tabs" role="tablist">
+		<button type="button" role="tab" class="tab-button" [class.active]="tabActiva === 'gestion'" [attr.aria-selected]="tabActiva === 'gestion'" (click)="tabActiva = 'gestion'">
+			Gestión
+		</button>
+		<button type="button" role="tab" class="tab-button" [class.active]="tabActiva === 'publicados'" [attr.aria-selected]="tabActiva === 'publicados'" (click)="tabActiva = 'publicados'">
+			Publicados ({{ tarjetasPublicadas.length }})
+		</button>
+	</nav>
+
+	<section *ngIf="tabActiva === 'publicados'" class="admin-section">
+		<div class="section-header">
+			<div>
+				<h2>Afiches publicados</h2>
+				<p class="subtitle">Seguimiento de aprobaciones y publicaciones en redes sociales</p>
+			</div>
+		</div>
+
+		<nav class="admin-tabs sub-tabs" role="tablist">
+			<button type="button" role="tab" class="tab-button" [class.active]="subTab === 'aprobadas'" (click)="seleccionarSubTab('aprobadas')">Aprobados</button>
+			<button type="button" role="tab" class="tab-button" [class.active]="subTab === 'PUBLICADA'" (click)="seleccionarSubTab('PUBLICADA')">Publicadas</button>
+			<button type="button" role="tab" class="tab-button" [class.active]="subTab === 'ERROR'" (click)="seleccionarSubTab('ERROR')">Con error</button>
+		</nav>
+
+		<ng-container *ngIf="subTab === 'aprobadas'">
+			<div *ngIf="cargandoPublicadas" class="state-message" role="status">
+				<span class="loader" aria-hidden="true"></span> Cargando tarjetas…
+			</div>
+
+			<div *ngIf="!cargandoPublicadas && tarjetasPublicadas.length === 0" class="empty-state">
+				<span class="empty-icon"><i class="pi pi-inbox" aria-hidden="true"></i></span>
+				<h3>Aún no hay afiches aprobados</h3>
+			</div>
+
+			<div *ngIf="tarjetasPublicadas.length > 0" class="tarjetas-grid">
+				<article class="tarjeta-card publicable" *ngFor="let tarjeta of tarjetasPublicadas">
+					<div class="tarjeta-icon aprobado-icon">
+						<i class="pi pi-check-circle" aria-hidden="true"></i>
+					</div>
+					<div class="tarjeta-header">
+						<div class="bailarin-info-full">
+							<h3 class="bailarin-nombre">{{ tarjeta.bailarin_nombre }}</h3>
+							<p class="bailarin-meta">Cumpleaños {{ tarjeta.anio }}</p>
+							<p class="bailarin-meta" *ngIf="tarjeta.fecha_aprobacion">
+								Aprobado el {{ tarjeta.fecha_aprobacion | date:'dd/MM/yyyy HH:mm' }}<span *ngIf="tarjeta.aprobado_por_username"> por {{ tarjeta.aprobado_por_username }}</span>
+							</p>
+						</div>
+						<span class="estado-badge estado-generado">Aprobado</span>
+					</div>
+				</article>
+			</div>
+		</ng-container>
+
+		<ng-container *ngIf="subTab !== 'aprobadas'">
+			<div class="filtros-publicaciones">
+				<label class="filtro">
+					<span>Año</span>
+					<select [(ngModel)]="anioFiltro" (ngModelChange)="cargarPublicaciones()">
+						<option *ngFor="let anio of anios" [ngValue]="anio">{{ anio }}</option>
+					</select>
+				</label>
+
+				<div class="filtro meses-filtro">
+					<span>Meses</span>
+					<button type="button" class="meses-toggle" (click)="mesesAbierto = !mesesAbierto" [attr.aria-expanded]="mesesAbierto">
+						{{ etiquetaMeses() }} <i class="pi pi-chevron-down" aria-hidden="true"></i>
+					</button>
+					<div *ngIf="mesesAbierto" class="meses-menu">
+						<label *ngFor="let mes of meses">
+							<input type="checkbox" [checked]="mesesSeleccionados.includes(mes)" (change)="toggleMes(mes)">
+							{{ mes.charAt(0) + mes.slice(1).toLowerCase() }}
+						</label>
+						<button type="button" class="primary-button" (click)="mesesAbierto = false; cargarPublicaciones()">Aplicar</button>
+					</div>
+				</div>
+			</div>
+
+			<div *ngIf="cargandoPublicaciones" class="state-message" role="status">
+				<span class="loader" aria-hidden="true"></span> Cargando publicaciones…
+			</div>
+
+			<div *ngIf="!cargandoPublicaciones && publicaciones.length === 0" class="empty-state">
+				<span class="empty-icon"><i class="pi pi-inbox" aria-hidden="true"></i></span>
+				<h3>No hay publicaciones {{ subTab === 'PUBLICADA' ? 'publicadas' : 'con error' }} para los filtros seleccionados</h3>
+			</div>
+
+			<div *ngIf="publicaciones.length > 0" class="tarjetas-grid">
+				<article class="tarjeta-card" *ngFor="let pub of publicaciones">
+					<div class="tarjeta-icon" [class.aprobado-icon]="pub.estado === 'PUBLICADA'">
+						<i [class]="pub.estado === 'PUBLICADA' ? 'pi pi-check-circle' : 'pi pi-times-circle'" aria-hidden="true"></i>
+					</div>
+					<div class="tarjeta-header">
+						<div class="bailarin-info-full">
+							<h3 class="bailarin-nombre">{{ nombreTarjeta(pub.tarjeta) }}</h3>
+							<p class="bailarin-meta">{{ pub.plataforma }} · {{ (pub.fecha_publicacion || pub.creado_en) | date:'dd/MM/yyyy HH:mm' }}</p>
+						</div>
+						<span class="estado-badge" [class.estado-generado]="pub.estado === 'PUBLICADA'" [class.estado-no-generado]="pub.estado === 'ERROR'">
+							{{ pub.estado === 'PUBLICADA' ? 'Publicado' : 'Error' }}
+						</span>
+					</div>
+					<p class="message-text">{{ pub.texto_publicacion }}</p>
+					<div *ngIf="pub.mensaje_error" class="error-detail">
+						<p class="error-message-text">{{ pub.mensaje_error }}</p>
+					</div>
+				</article>
+			</div>
+		</ng-container>
+	</section>
+
+	<section *ngIf="tabActiva === 'gestion'" class="admin-section">
+		<div class="section-header">
+			<div>
+				<h2>Afiches no generados</h2>
+				<span class="count">{{ tarjetasNoGeneradas.length }} {{ tarjetasNoGeneradas.length === 1 ? 'tarjeta' : 'tarjetas' }}</span>
+			</div>
+		</div>
+
+		<div *ngIf="cargando" class="state-message" role="status">
+			<span class="loader" aria-hidden="true"></span> Cargando tarjetas…
+		</div>
+
+		<div *ngIf="!cargando && tarjetasNoGeneradas.length === 0" class="empty-state">
+			<span class="empty-icon"><i class="pi pi-check-circle" aria-hidden="true"></i></span>
+			<h3>¡Excelente!</h3>
+			<p>No hay afiches sin generar. Todas las tarjetas de cumpleaños están generadas.</p>
+		</div>
+
+		<div *ngIf="!cargando && tarjetasNoGeneradas.length > 0" class="tarjetas-grid">
+			<article class="tarjeta-card no-generada" *ngFor="let tarjeta of tarjetasNoGeneradas">
+				<div class="tarjeta-icon">
+					<i class="pi pi-times-circle" aria-hidden="true"></i>
+				</div>
+
+				<div class="tarjeta-header">
+					<div class="bailarin-info-full">
+						<h3 class="bailarin-nombre">{{ tarjeta.bailarin_nombre || (tarjeta.bailarin?.nombres + ' ' + tarjeta.bailarin?.apellidos) }}</h3>
+						<p class="bailarin-meta">Cumpleaños {{ tarjeta.anio }}</p>
+					</div>
+					<span class="estado-badge estado-no-generado">
+						Sin generar
+					</span>
+				</div>
+
+				<div *ngIf="tarjeta.motivo_no_generacion" class="error-detail">
+					<div class="error-header">
+						<i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+						<span>Motivo del error</span>
+					</div>
+					<p class="error-message-text">{{ tarjeta.motivo_no_generacion }}</p>
+				</div>
+
+				<div class="tarjeta-actions">
+					<button
+						type="button"
+						class="primary-button full-width"
+						(click)="abrirFormularioGeneracion(tarjeta)"
+						[disabled]="tarjeta.cargandoGeneracion"
+					>
+						<i [class]="tarjeta.cargandoGeneracion ? 'pi pi-spin pi-spinner' : 'pi pi-image'" aria-hidden="true"></i>
+						<span>{{ tarjeta.cargandoGeneracion ? 'Generando…' : 'Generar afiche' }}</span>
+					</button>
+				</div>
+			</article>
+		</div>
+	</section>
+
+	<section *ngIf="tabActiva === 'gestion'" class="admin-section">
+		<div class="section-header">
+			<div>
+				<h2>Afiches listos para publicar</h2>
+				<p class="subtitle">Tarjetas aprobadas sin publicar en redes sociales</p>
+			</div>
+		</div>
+
+		<div *ngIf="!cargando && tarjetasAprobadas.length === 0" class="empty-state">
+			<span class="empty-icon"><i class="pi pi-inbox" aria-hidden="true"></i></span>
+			<h3>No hay afiches para publicar</h3>
+			<p>Todas las tarjetas aprobadas ya han sido publicadas en las redes sociales.</p>
+		</div>
+
+		<div *ngIf="tarjetasAprobadas.length > 0" class="tarjetas-grid">
+			<article class="tarjeta-card publicable" *ngFor="let tarjeta of tarjetasAprobadas">
+				<div class="tarjeta-preview-container">
+					<div *ngIf="tarjeta.imagen" class="tarjeta-preview">
+						<img [src]="tarjeta.imagen" [alt]="'Afiche de ' + tarjeta.bailarin_nombre" loading="lazy">
+						<div class="preview-overlay">
+							<button
+								type="button"
+								class="icon-button"
+								title="Descargar afiche"
+								(click)="descargarTarjeta(tarjeta.imagen)"
+							>
+								<i class="pi pi-download" aria-hidden="true"></i>
+							</button>
+						</div>
+					</div>
+					<div *ngIf="!tarjeta.imagen" class="no-preview">
+						<i class="pi pi-image" aria-hidden="true"></i>
+						<p>Sin previsualización</p>
+					</div>
+				</div>
+
+				<div class="tarjeta-header">
+					<div class="bailarin-info-full">
+						<h3 class="bailarin-nombre">{{ tarjeta.bailarin_nombre || (tarjeta.bailarin?.nombres + ' ' + tarjeta.bailarin?.apellidos) }}</h3>
+						<p class="bailarin-meta">Cumpleaños {{ tarjeta.anio }}</p>
+					</div>
+					<span class="estado-badge estado-generado">
+						Generado
+					</span>
+				</div>
+
+				<div *ngIf="tarjeta.publicaciones && tarjeta.publicaciones.length > 0" class="publicaciones-badge">
+					<div class="publicacion-item" *ngFor="let pub of tarjeta.publicaciones" [class.publicacion-error]="pub.estado === 'ERROR'">
+						<i [class]="pub.estado === 'PUBLICADA' ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'" aria-hidden="true"></i>
+						<span>{{ pub.plataforma }}</span>
+						<span class="status">{{ pub.estado }}</span>
+					</div>
+				</div>
+
+				<div class="tarjeta-actions">
+					<button
+						type="button"
+						class="primary-button full-width"
+						(click)="aprobarYPublicar(tarjeta)"
+						[disabled]="tarjeta.cargandoPublicacion"
+					>
+						<i [class]="tarjeta.cargandoPublicacion ? 'pi pi-spin pi-spinner' : 'pi pi-share-alt'" aria-hidden="true"></i>
+						<span>{{ tarjeta.cargandoPublicacion ? 'Publicando…' : 'Publicar en redes' }}</span>
+					</button>
+				</div>
+			</article>
+		</div>
+	</section>
+</main>
+
+<div *ngIf="mostrarFormularioGeneracion" class="modal-backdrop" (click)="cerrarFormularioGeneracion()">
+	<section class="form-modal" role="dialog" aria-modal="true" [attr.aria-label]="'Generar afiche'" (click)="$event.stopPropagation()">
+		<header class="modal-heading">
+			<div>
+				<p class="eyebrow">Generación manual</p>
+				<h2 *ngIf="tarjetaSeleccionada?.estado_generacion === 'NO_GENERADA'">Generar afiche</h2>
+				<h2 *ngIf="tarjetaSeleccionada?.estado_generacion === 'GENERADA'">Publicar en redes sociales</h2>
+			</div>
+			<button type="button" class="close-button" (click)="cerrarFormularioGeneracion()" aria-label="Cerrar">&times;</button>
+		</header>
+
+		<!-- Formulario de generación -->
+		<form *ngIf="tarjetaSeleccionada?.estado_generacion === 'NO_GENERADA'" [formGroup]="formGeneracion" (ngSubmit)="generarTarjetaManualmente()">
+			<div class="form-body">
+				<div *ngIf="tarjetaSeleccionada" class="tarjeta-info">
+					<p><strong>Bailarín:</strong> {{ tarjetaSeleccionada.bailarin_nombre || (tarjetaSeleccionada.bailarin?.nombres + ' ' + tarjetaSeleccionada.bailarin?.apellidos) }}</p>
+					<p><strong>Año:</strong> {{ tarjetaSeleccionada.anio }}</p>
+					<p *ngIf="tarjetaSeleccionada.motivo_no_generacion" class="error-reason">
+						<strong>Motivo de error:</strong> {{ tarjetaSeleccionada.motivo_no_generacion }}
+					</p>
+				</div>
+
+				<label class="form-field">
+					<span>Imagen (JPG/PNG) <b>*</b></span>
+					<input
+						type="file"
+						class="form-control"
+						accept="image/jpeg,image/png"
+						(change)="onImagenSeleccionada($event)"
+						[disabled]="tarjetaSeleccionada?.cargandoGeneracion"
+					/>
+					<small *ngIf="formGeneracion.get('imagen')?.value" class="success-text">
+						✓ Archivo seleccionado: {{ imagenSeleccionada?.name }}
+					</small>
+					<small *ngIf="formGeneracion.get('imagen')?.hasError('required') && formGeneracion.get('imagen')?.touched" class="validation-error">
+						La imagen es obligatoria.
+					</small>
+				</label>
+
+				<label class="form-field">
+					<span>Mensaje generado <b>*</b></span>
+					<textarea
+						class="form-control"
+						formControlName="mensaje_generado"
+						rows="5"
+						placeholder="Mensaje que acompañará el afiche…"
+						[disabled]="(tarjetaSeleccionada?.cargandoGeneracion ?? false)"
+					></textarea>
+					<small *ngIf="formGeneracion.get('mensaje_generado')?.hasError('required') && formGeneracion.get('mensaje_generado')?.touched" class="validation-error">
+						El mensaje es obligatorio.
+					</small>
+				</label>
+			</div>
+
+			<footer class="modal-actions">
+				<button type="button" class="secondary-button" (click)="cerrarFormularioGeneracion()" [disabled]="tarjetaSeleccionada?.cargandoGeneracion">
+					Cancelar
+				</button>
+				<button type="submit" class="primary-button" [disabled]="formGeneracion.invalid || tarjetaSeleccionada?.cargandoGeneracion">
+					<i *ngIf="tarjetaSeleccionada?.cargandoGeneracion" class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+					{{ tarjetaSeleccionada?.cargandoGeneracion ? 'Generando…' : 'Generar y guardar' }}
+				</button>
+			</footer>
+		</form>
+
+		<!-- Formulario de publicación -->
+		<form *ngIf="tarjetaSeleccionada?.estado_generacion === 'GENERADA'" [formGroup]="formPublicacion" (ngSubmit)="publicarEnRedesSociales()">
+			<div class="form-body">
+				<div *ngIf="tarjetaSeleccionada" class="tarjeta-info">
+					<p><strong>Bailarín:</strong> {{ tarjetaSeleccionada.bailarin_nombre || (tarjetaSeleccionada.bailarin?.nombres + ' ' + tarjetaSeleccionada.bailarin?.apellidos) }}</p>
+					<p><strong>Año:</strong> {{ tarjetaSeleccionada.anio }}</p>
+				</div>
+
+				<div class="form-field">
+					<span>Redes sociales <b>*</b></span>
+					<div class="checkbox-group">
+						<label class="checkbox-label" *ngFor="let plataforma of plataformas">
+							<input
+								type="checkbox"
+								[checked]="(formPublicacion.get('plataformas')?.value || []).includes(plataforma.value)"
+								(change)="togglePlataforma(plataforma.value)"
+								[disabled]="tarjetaSeleccionada?.cargandoPublicacion"
+							/>
+							<span>{{ plataforma.label }}</span>
+						</label>
+					</div>
+					<small *ngIf="formPublicacion.get('plataformas')?.hasError('required') && formPublicacion.get('plataformas')?.touched" class="validation-error">
+						Selecciona al menos una red social.
+					</small>
+				</div>
+
+				<label class="form-field">
+					<span>Texto de publicación <b>*</b></span>
+					<textarea
+						class="form-control"
+						formControlName="texto_publicacion"
+						rows="5"
+						placeholder="Texto que acompañará la publicación…"
+						[disabled]="(tarjetaSeleccionada?.cargandoPublicacion ?? false)"
+					></textarea>
+					<small *ngIf="formPublicacion.get('texto_publicacion')?.hasError('required') && formPublicacion.get('texto_publicacion')?.touched" class="validation-error">
+						El texto es obligatorio.
+					</small>
+				</label>
+			</div>
+
+			<footer class="modal-actions">
+				<button type="button" class="secondary-button" (click)="cerrarFormularioGeneracion()" [disabled]="tarjetaSeleccionada?.cargandoPublicacion">
+					Cancelar
+				</button>
+				<button type="submit" class="primary-button" [disabled]="formPublicacion.invalid || tarjetaSeleccionada?.cargandoPublicacion">
+					<i *ngIf="tarjetaSeleccionada?.cargandoPublicacion" class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+					{{ tarjetaSeleccionada?.cargandoPublicacion ? 'Publicando...' : 'Publicar en redes' }}
+				</button>
+			</footer>
+		</form>
+	</section>
+</div>

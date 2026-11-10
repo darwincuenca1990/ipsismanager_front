@@ -8,11 +8,12 @@ import {
   PlantillaCumpleanosPayload,
   PlantillasCumpleanosService
 } from '../../services/plantillas-cumpleanos.service';
+import { CumpleanosAdministradorComponent } from './cumpleanos-administrador.component';
 
 @Component({
   selector: 'app-cumpleanos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CumpleanosAdministradorComponent],
   templateUrl: './cumpleanos.component.html',
   styleUrl: './cumpleanos.component.css'
 })
@@ -23,6 +24,7 @@ export class CumpleanosComponent implements OnInit {
     { value: 'MÁSTER', label: 'Máster' }
   ];
 
+  seccionActiva: 'plantillas' | 'administrador' = 'plantillas';
   plantillas: PlantillaCumpleanos[] = [];
   filtroElenco: ElencoPlantilla | '' = '';
   cargando = false;
@@ -50,6 +52,10 @@ export class CumpleanosComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPlantillas();
+  }
+
+  cambiarSeccion(seccion: 'plantillas' | 'administrador'): void {
+    this.seccionActiva = seccion;
   }
 
   cargarPlantillas(): void {
