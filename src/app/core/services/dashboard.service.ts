@@ -1,8 +1,15 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { forkJoin, map, Observable } from 'rxjs';
+import { catchError, forkJoin, map, Observable } from 'rxjs';
+import { constants } from '../../../assets/constants/constants';
 import { Bailarin, BailarinesService } from './bailarines.service';
 
 export type ElencoDashboard = 'INFANTIL' | 'PLANTA' | 'MÁSTER';
+
+export interface PresentacionesResumen {
+  total: number;
+  porMes: number[];
+}
 
 export interface CumpleaneroDashboard {
   id: number;
@@ -27,7 +34,34 @@ export interface ResumenDashboard {
 })
 export class DashboardService {
 
-  constructor(private readonly bailarinesService: BailarinesService) { }
+  constructor(
+    private readonly bailarinesService: BailarinesService,
+    private readonly http: HttpClient
+  ) { }
+
+  // El endpoint aún no existe: se espera una lista (o { data: [...] }) cuyos ítems incluyan una fecha.
+  obtenerPresentacionesPorMes(anio: number): Observable<PresentacionesResumen | null> {
+    const params = new HttpParams().set('anio', anio.toString());
+    const url = constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT + '/presentaciones/';
+    return this.http.get<unknown>(url, { params }).pipe(
+      map(response => {
+        const items = Array.isArray(response)
+          ? response
+          : (response as { data?: unknown; results?: unknown } | null)?.data
+            ?? (response as { results?: unknown } | null)?.results;
+        if (!Array.isArray(items)) return null;
+
+        const porMes = new Array<number>(12).fill(0);
+        items.forEach((item: Record<string, unknown>) => {
+          const fecha = String(item['fecha'] ?? item['fecha_presentacion'] ?? item['fecha_inicio'] ?? '');
+          const [year, month] = fecha.slice(0, 10).split('-').map(Number);
+          if (year === anio && month >= 1 && month <= 12) porMes[month - 1]++;
+        });
+        return { total: porMes.reduce((a, b) => a + b, 0), porMes };
+      }),
+      catchError(() => [null])
+    );
+  }
 
   obtenerResumen(fechaReferencia: Date = new Date()): Observable<ResumenDashboard> {
     return forkJoin({

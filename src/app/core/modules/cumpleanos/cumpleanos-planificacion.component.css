@@ -1,0 +1,49 @@
+.plan-section { display: grid; gap: 1rem; }
+.plan-eyebrow { margin: 0; color: #6b7280; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.plan-header h2 { margin: 0; color: #1b2c47; }
+
+.plan-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+.plan-tab {
+	display: inline-flex; align-items: center; gap: 0.4rem;
+	padding: 0.6rem 1.1rem; border: 0; border-bottom: 3px solid transparent;
+	background: transparent; color: #6b7280; font-weight: 600; cursor: pointer;
+}
+.plan-tab.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+
+.plan-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.segmented { display: inline-flex; border: 1px solid #d1d5db; border-radius: 0.5rem; overflow: hidden; }
+.segmented button { padding: 0.5rem 0.9rem; border: 0; background: white; color: #4b5563; font-weight: 600; cursor: pointer; }
+.segmented button + button { border-left: 1px solid #d1d5db; }
+.segmented button.active { background: #1d4ed8; color: white; }
+.range { color: #4b5563; font-size: 0.9rem; }
+.month-select { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: #374151; }
+.month-select select { min-width: 12rem; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; }
+.total { margin-left: auto; color: #6b7280; font-size: 0.9rem; font-weight: 600; }
+
+.plan-error { padding: 0.75rem 1rem; border-radius: 0.5rem; background: #fef2f2; color: #b91c1c; }
+.plan-state, .plan-empty { display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 2rem; color: #6b7280; }
+.plan-empty { flex-direction: column; }
+.plan-empty i { font-size: 2rem; }
+.spinner { width: 1.1rem; height: 1.1rem; border: 2px solid #d1d5db; border-top-color: #1d4ed8; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.plan-card {
+	display: flex; gap: 0.9rem; padding: 1rem;
+	border: 1px solid #e5e7eb; border-radius: 0.75rem; background: white;
+	box-shadow: 0 4px 14px rgb(22 43 77 / 5%);
+}
+.photo-wrap { position: relative; flex: 0 0 auto; width: 5rem; height: 5rem; }
+.photo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #f3ecff; }
+.photo-fallback { display: grid; place-items: center; background: #e5d7ff; color: #7852c6; font-size: 1.8rem; font-weight: 800; }
+.date-badge {
+	position: absolute; right: -0.4rem; bottom: -0.4rem; display: grid; place-content: center;
+	width: 2.4rem; height: 2.4rem; border-radius: 0.6rem; background: #7852c6; color: white;
+	text-align: center; box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+}
+.date-badge strong { font-size: 1rem; line-height: 1; }
+.date-badge span { font-size: 0.55rem; font-weight: 700; text-transform: uppercase; }
+.plan-info h3 { margin: 0 0 0.2rem; font-size: 1rem; color: #1b2c47; }
+.meta { margin: 0.1rem 0; color: #6b7280; font-size: 0.82rem; }
+.auth { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.4rem; color: #b45309; font-size: 0.78rem; font-weight: 600; }
+.auth.auth-ok { color: #15803d; }

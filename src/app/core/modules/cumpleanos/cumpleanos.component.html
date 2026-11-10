@@ -2,6 +2,16 @@
 	<nav class="section-tabs" role="tablist">
 		<button
 			role="tab"
+			[attr.aria-selected]="seccionActiva === 'administrador'"
+			(click)="cambiarSeccion('administrador')"
+			[class.tab-active]="seccionActiva === 'administrador'"
+			class="section-tab"
+		>
+			<i class="pi pi-cog" aria-hidden="true"></i>
+			Gestión Afiches
+		</button>
+		<button
+			role="tab"
 			[attr.aria-selected]="seccionActiva === 'plantillas'"
 			(click)="cambiarSeccion('plantillas')"
 			[class.tab-active]="seccionActiva === 'plantillas'"
@@ -12,15 +22,19 @@
 		</button>
 		<button
 			role="tab"
-			[attr.aria-selected]="seccionActiva === 'administrador'"
-			(click)="cambiarSeccion('administrador')"
-			[class.tab-active]="seccionActiva === 'administrador'"
+			[attr.aria-selected]="seccionActiva === 'planificacion'"
+			(click)="cambiarSeccion('planificacion')"
+			[class.tab-active]="seccionActiva === 'planificacion'"
 			class="section-tab"
 		>
-			<i class="pi pi-cog" aria-hidden="true"></i>
-			Administración
+			<i class="pi pi-calendar" aria-hidden="true"></i>
+			Planificación Cumpleaños
 		</button>
 	</nav>
+
+	<section *ngIf="seccionActiva === 'planificacion'" role="tabpanel">
+		<app-cumpleanos-planificacion></app-cumpleanos-planificacion>
+	</section>
 
 	<!-- Sección de Plantillas -->
 	<section *ngIf="seccionActiva === 'plantillas'" role="tabpanel">

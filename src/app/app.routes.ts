@@ -5,6 +5,7 @@ import { AuthGuard } from './core/services/auth.guard';
 import { DashboardComponent } from './core/modules/dashboard/dashboard.component';
 import { BailarinesComponent } from './core/modules/bailarines/bailarines.component';
 import { CumpleanosComponent } from './core/modules/cumpleanos/cumpleanos.component';
+import { PresentacionesComponent } from './core/modules/presentaciones/presentaciones.component';
 
 
 export const routes: Routes = [
@@ -29,9 +30,19 @@ export const routes: Routes = [
             {
             path: 'cumpleanos',
                 component: CumpleanosComponent,
-                data: { breadcrumb: 'Cumpleaños' },
+                data: {
+                    breadcrumb: 'Cumpleaños',
+                    breadcrumbTabs: { afiches: 'Gestión Afiches', plantillas: 'Plantillas', planificacion: 'Planificación Cumpleaños' },
+                    breadcrumbDefaultTab: 'afiches'
+                },
                 canActivate: [AuthGuard],
-            },                    
+            },   
+            {
+            path: 'presentaciones',
+                component: PresentacionesComponent,
+                data: { breadcrumb: 'Presentaciones' },
+                canActivate: [AuthGuard],
+            },
         ]
     }
 ];

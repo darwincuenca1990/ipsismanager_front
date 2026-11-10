@@ -138,7 +138,7 @@
 
 .summary-grid {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(5, minmax(0, 1fr));
 	gap: 1rem;
 	margin-bottom: 1rem;
 }
@@ -154,7 +154,68 @@
 	border: 1px solid transparent;
 	border-radius: 1rem;
 	box-shadow: 0 8px 22px rgb(22 43 77 / 5%);
+	text-decoration: none;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.summary-link { cursor: pointer; }
+
+.summary-link:hover,
+.summary-link:focus-visible {
+	transform: translateY(-4px);
+	box-shadow: 0 14px 30px rgb(22 43 77 / 12%);
+	outline: none;
+}
+
+.summary-link:focus-visible { border-color: #315fc2; }
+
+.summary-go {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	width: 1.9rem;
+	height: 1.9rem;
+	border-radius: 50%;
+	background: rgb(255 255 255 / 75%);
+	color: #586981;
+	font-size: 0.8rem;
+	opacity: 0;
+	transform: translateX(-6px);
+	transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.summary-link:hover .summary-go,
+.summary-link:focus-visible .summary-go {
+	opacity: 1;
+	transform: none;
+}
+
+.summary-card-teal { background: linear-gradient(135deg, #f0fbf9, #dff6f2); border-color: #cdeee8; }
+.summary-card-teal .summary-icon { color: #0f766e; background: #bdeee6; }
+
+.month-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	margin: 0.35rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.month-chips li {
+	padding: 0.15rem 0.5rem;
+	border-radius: 999px;
+	background: rgb(255 255 255 / 80%);
+	border: 1px solid #cdeee8;
+	color: #586981;
+	font-size: 0.7rem;
+	font-weight: 600;
+}
+
+.month-chips li strong { display: inline; font-size: 0.75rem; color: #0f766e; }
 
 .summary-card-blue { background: linear-gradient(135deg, #f0f5ff, #e1ebff); border-color: #dce7ff; }
 .summary-card-rose { background: linear-gradient(135deg, #fff4f3, #ffe5e2); border-color: #ffe0dc; }
@@ -346,6 +407,24 @@
 	font-size: 0.75rem;
 	font-weight: 700;
 }
+
+.bar-link,
+.roster-label-link {
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.bar-link .roster-bar { transition: filter 0.2s ease, transform 0.2s ease; transform-origin: bottom; }
+
+.bar-link:hover .roster-bar,
+.bar-link:focus-visible .roster-bar {
+	filter: brightness(1.12) saturate(1.15);
+	transform: scaleX(1.12);
+}
+
+.bar-link:focus-visible { outline: 2px solid #315fc2; outline-offset: 2px; border-radius: 0.4rem; }
+
+.roster-label-link:hover { color: #315fc2; text-decoration: underline; }
 
 .chart-note,
 .api-note {
@@ -589,6 +668,10 @@
 	padding: 0.6rem 0.7rem;
 	border-radius: 0.6rem;
 	background: #f4f8f8;
+}
+
+@media (max-width: 1250px) {
+	.summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1050px) {

@@ -28,26 +28,45 @@
 
 	<ng-container *ngIf="resumen as data">
 		<section class="summary-grid" aria-label="Resumen general">
-			<article class="summary-card summary-card-blue">
+			<a class="summary-card summary-card-blue summary-link" routerLink="/bailarines" [queryParams]="{ estado: 'ACTIVO' }" title="Ver bailarines activos">
 				<div class="summary-icon"><i class="pi pi-users" aria-hidden="true"></i></div>
 				<div class="summary-copy"><span>Bailarines activos</span><strong>{{ data.bailarines.totalActivos }}</strong><small>Integrantes vigentes</small></div>
+				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
 				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-users"></i></span>
-			</article>
-			<article class="summary-card summary-card-rose">
+			</a>
+			<a class="summary-card summary-card-rose summary-link" routerLink="/bailarines" [queryParams]="{ estado: 'INACTIVO' }" title="Ver bailarines inactivos">
 				<div class="summary-icon"><i class="pi pi-user-minus" aria-hidden="true"></i></div>
 				<div class="summary-copy"><span>Bailarines inactivos</span><strong>{{ data.bailarines.totalInactivos }}</strong><small>Registros inactivos</small></div>
+				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
 				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-user-minus"></i></span>
-			</article>
-			<article class="summary-card summary-card-violet">
+			</a>
+			<a class="summary-card summary-card-violet summary-link" routerLink="/cumpleanos" title="Ir a cumpleaños">
 				<div class="summary-icon"><i class="pi pi-gift" aria-hidden="true"></i></div>
 				<div class="summary-copy"><span>Cumpleaños esta semana</span><strong>{{ data.cumpleanosSemana.length }}</strong><small>De lunes a domingo</small></div>
+				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
 				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-gift"></i></span>
-			</article>
-			<article class="summary-card summary-card-amber">
+			</a>
+			<a class="summary-card summary-card-amber summary-link" routerLink="/cumpleanos" title="Ir a cumpleaños">
 				<div class="summary-icon"><i class="pi pi-star" aria-hidden="true"></i></div>
 				<div class="summary-copy"><span>Cumpleaños en {{ mesActual }}</span><strong>{{ data.cumpleanosMes.length }}</strong><small>Durante este mes</small></div>
+				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
 				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-star"></i></span>
-			</article>
+			</a>
+			<a class="summary-card summary-card-teal summary-link" routerLink="/presentaciones" title="Ir a presentaciones">
+				<div class="summary-icon"><i class="pi pi-megaphone" aria-hidden="true"></i></div>
+				<div class="summary-copy">
+					<span>Presentaciones {{ hoy.getFullYear() }}</span>
+					<strong>{{ presentaciones ? presentaciones.total : '—' }}</strong>
+					<small *ngIf="!presentaciones">Servicio pendiente de conectar</small>
+					<ul class="month-chips" *ngIf="presentaciones">
+						<ng-container *ngFor="let mes of nombresMeses; let i = index">
+							<li *ngIf="presentaciones.porMes[i] > 0"><strong>{{ presentaciones.porMes[i] }}</strong> {{ mes.slice(0, 3) }}</li>
+						</ng-container>
+					</ul>
+				</div>
+				<span class="summary-go" aria-hidden="true"><i class="pi pi-arrow-right"></i></span>
+				<span class="summary-decoration" aria-hidden="true"><i class="pi pi-megaphone"></i></span>
+			</a>
 		</section>
 
 		<section class="dashboard-grid main-dashboard-grid">
@@ -63,16 +82,16 @@
 				<div class="roster-chart" role="img" aria-label="Gráfico de bailarines por elenco y estado">
 					<div class="roster-column" *ngFor="let elenco of elencos">
 						<div class="bar-pair">
-							<div class="bar-track" [attr.aria-label]="data.bailarines.porElenco[elenco].activos + ' activos'">
+							<a class="bar-track bar-link" routerLink="/bailarines" [queryParams]="{ estado: 'ACTIVO', elenco: elenco }" [attr.aria-label]="data.bailarines.porElenco[elenco].activos + ' activos de ' + elenco + ': ver lista'" [title]="'Ver ' + elenco + ' activos'">
 								<span class="roster-bar active-bar" [style.height.%]="porcentajeElenco(elenco, 'activos')"></span>
 								<strong>{{ data.bailarines.porElenco[elenco].activos }}</strong>
-							</div>
-							<div class="bar-track" [attr.aria-label]="data.bailarines.porElenco[elenco].inactivos + ' inactivos'">
+							</a>
+							<a class="bar-track bar-link" routerLink="/bailarines" [queryParams]="{ estado: 'INACTIVO', elenco: elenco }" [attr.aria-label]="data.bailarines.porElenco[elenco].inactivos + ' inactivos de ' + elenco + ': ver lista'" [title]="'Ver ' + elenco + ' inactivos'">
 								<span class="roster-bar inactive-bar" [style.height.%]="porcentajeElenco(elenco, 'inactivos')"></span>
 								<strong>{{ data.bailarines.porElenco[elenco].inactivos }}</strong>
-							</div>
+							</a>
 						</div>
-						<span class="roster-label">{{ elenco }}</span>
+						<a class="roster-label roster-label-link" routerLink="/bailarines" [queryParams]="{ estado: 'ACTIVO', elenco: elenco }">{{ elenco }}</a>
 					</div>
 				</div>
 				<footer class="chart-note"><i class="pi pi-info-circle" aria-hidden="true"></i> Las variantes “Aspirante” se agrupan con su elenco correspondiente.</footer>

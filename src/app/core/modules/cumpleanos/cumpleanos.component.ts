@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 import {
@@ -9,22 +11,26 @@ import {
   PlantillasCumpleanosService
 } from '../../services/plantillas-cumpleanos.service';
 import { CumpleanosAdministradorComponent } from './cumpleanos-administrador.component';
+import { CumpleanosPlanificacionComponent } from './cumpleanos-planificacion.component';
+
+type Seccion = 'plantillas' | 'administrador' | 'planificacion';
 
 @Component({
   selector: 'app-cumpleanos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CumpleanosAdministradorComponent],
+  imports: [CommonModule, ReactiveFormsModule, CumpleanosAdministradorComponent, CumpleanosPlanificacionComponent],
   templateUrl: './cumpleanos.component.html',
   styleUrl: './cumpleanos.component.css'
 })
-export class CumpleanosComponent implements OnInit {
+export class CumpleanosComponent implements OnInit, OnDestroy {
   readonly opcionesElenco: { value: ElencoPlantilla; label: string }[] = [
     { value: 'INFANTIL', label: 'Infantil' },
     { value: 'PLANTA', label: 'Planta' },
     { value: 'MÁSTER', label: 'Máster' }
   ];
 
-  seccionActiva: 'plantillas' | 'administrador' = 'plantillas';
+  seccionActiva: Seccion = 'administrador';
+  private tabSubscription?: Subscription;
   plantillas: PlantillaCumpleanos[] = [];
   filtroElenco: ElencoPlantilla | '' = '';
   cargando = false;
@@ -47,15 +53,26 @@ export class CumpleanosComponent implements OnInit {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly plantillasService: PlantillasCumpleanosService
+    private readonly plantillasService: PlantillasCumpleanosService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.tabSubscription = this.route.queryParamMap.subscribe(params => {
+      const tab = params.get('tab');
+      this.seccionActiva = tab === 'plantillas' ? 'plantillas' : tab === 'planificacion' ? 'planificacion' : 'administrador';
+    });
     this.cargarPlantillas();
   }
 
-  cambiarSeccion(seccion: 'plantillas' | 'administrador'): void {
-    this.seccionActiva = seccion;
+  ngOnDestroy(): void {
+    this.tabSubscription?.unsubscribe();
+  }
+
+  cambiarSeccion(seccion: Seccion): void {
+    const tab = seccion === 'administrador' ? 'afiches' : seccion;
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { tab } });
   }
 
   cargarPlantillas(): void {

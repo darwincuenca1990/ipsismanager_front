@@ -1,0 +1,70 @@
+<section class="plan-section">
+	<header class="plan-header">
+		<div>
+			<p class="plan-eyebrow">Planificación</p>
+			<h2>Planificación Cumpleaños</h2>
+		</div>
+	</header>
+
+	<nav class="plan-tabs" role="tablist">
+		<button type="button" role="tab" class="plan-tab" [class.active]="subTab === 'semana'" [attr.aria-selected]="subTab === 'semana'" (click)="seleccionarSubTab('semana')">
+			<i class="pi pi-calendar" aria-hidden="true"></i> Cumpleaños esta Semana
+		</button>
+		<button type="button" role="tab" class="plan-tab" [class.active]="subTab === 'mes'" [attr.aria-selected]="subTab === 'mes'" (click)="seleccionarSubTab('mes')">
+			<i class="pi pi-calendar-plus" aria-hidden="true"></i> Cumpleaños este mes
+		</button>
+	</nav>
+
+	<div class="plan-filters">
+		<ng-container *ngIf="subTab === 'semana'">
+			<div class="segmented" role="group" aria-label="Semana">
+				<button type="button" *ngFor="let s of semanas" [class.active]="semana === s.value" (click)="seleccionarSemana(s.value)">{{ s.label }}</button>
+			</div>
+			<span *ngIf="periodo?.fecha_inicio" class="range">
+				<i class="pi pi-calendar" aria-hidden="true"></i>
+				{{ formatearFecha(periodo?.fecha_inicio ?? null) }} – {{ formatearFecha(periodo?.fecha_fin ?? null) }}
+			</span>
+		</ng-container>
+
+		<label *ngIf="subTab === 'mes'" class="month-select">
+			<span>Mes</span>
+			<select [(ngModel)]="mes" (ngModelChange)="cargar()">
+				<option *ngFor="let nombre of nombresMeses; let i = index" [ngValue]="i + 1">{{ nombre }}</option>
+			</select>
+		</label>
+
+		<span *ngIf="periodo" class="total">{{ periodo.data.length }} {{ periodo.data.length === 1 ? 'cumpleañero' : 'cumpleañeros' }}</span>
+	</div>
+
+	<div *ngIf="error" class="plan-error" role="alert"><i class="pi pi-exclamation-circle" aria-hidden="true"></i> {{ error }}</div>
+
+	<div *ngIf="cargando" class="plan-state" role="status"><span class="spinner" aria-hidden="true"></span> Cargando cumpleaños…</div>
+
+	<div *ngIf="!cargando && periodo && periodo.data.length === 0" class="plan-empty">
+		<i class="pi pi-inbox" aria-hidden="true"></i>
+		<strong>No hay cumpleaños en este periodo</strong>
+	</div>
+
+	<div *ngIf="!cargando && periodo && periodo.data.length > 0" class="plan-grid">
+		<article class="plan-card" *ngFor="let b of periodo.data">
+			<div class="photo-wrap">
+				<img *ngIf="fotoUrlPorId[b.id]" class="photo" [src]="fotoUrlPorId[b.id]" [alt]="'Foto de ' + b.nombres" loading="lazy">
+				<span *ngIf="!fotoUrlPorId[b.id]" class="photo photo-fallback" aria-hidden="true">{{ inicial(b) }}</span>
+				<div class="date-badge"><strong>{{ dia(b) }}</strong><span>{{ mesCorto(b) }}</span></div>
+			</div>
+			<div class="plan-info">
+				<h3>{{ b.nombres }} {{ b.apellidos }}</h3>
+				<p class="meta">{{ b.elenco }} · Cumple {{ edadQueCumple(b) }} años</p>
+				<p class="meta" *ngIf="b.celular"><i class="pi pi-phone" aria-hidden="true"></i> {{ b.celular }}</p>
+				<p class="meta" *ngIf="b.grupo_familiar?.nombres_completos_representante">
+					<i class="pi pi-user" aria-hidden="true"></i> {{ b.grupo_familiar?.nombres_completos_representante }}
+					<span *ngIf="b.grupo_familiar?.celular_representante">({{ b.grupo_familiar?.celular_representante }})</span>
+				</p>
+				<span class="auth" [class.auth-ok]="b.autorizado_publicacion">
+					<i [class]="b.autorizado_publicacion ? 'pi pi-check-circle' : 'pi pi-times-circle'" aria-hidden="true"></i>
+					{{ b.autorizado_publicacion ? 'Autoriza publicación' : 'Sin autorización de publicación' }}
+				</span>
+			</div>
+		</article>
+	</div>
+</section>

@@ -71,6 +71,35 @@ interface TarjetasResponse {
   data: TarjetaCumpleanos[];
 }
 
+export type SemanaCumpleanos = 'anterior' | 'actual' | 'siguiente';
+
+export interface CumpleaneroDetalle {
+  id: number;
+  elenco: string;
+  estado: string;
+  cedula: string;
+  apellidos: string;
+  nombres: string;
+  fecha_nacimiento: string;
+  celular?: string | null;
+  correo?: string | null;
+  fotografia?: string | null;
+  autorizado_publicacion?: boolean;
+  grupo_familiar?: {
+    nombres_completos_representante?: string;
+    celular_representante?: string;
+    parentesco?: string;
+  } | null;
+}
+
+export interface CumpleanosPeriodo {
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  data: CumpleaneroDetalle[];
+}
+
+type CumpleanosPeriodoResponse = Partial<CumpleanosPeriodo>;
+
 interface TarjetaResponse {
   data: TarjetaConPublicaciones[];
 }
@@ -239,6 +268,30 @@ export class PlantillasCumpleanosService {
 
   aprobarTarjeta(id: number): Observable<unknown> {
     return this.http.post<unknown>(`${this.tarjetasUrl}${id}/aprobar/`, {});
+  }
+
+  listarCumpleanosSemana(semana: SemanaCumpleanos): Observable<CumpleanosPeriodo> {
+    let params = new HttpParams();
+    if (semana !== 'actual') params = params.set('semana', semana);
+    return this.http.get<CumpleanosPeriodoResponse>(this.apiBaseUrl + '/bailarines/cumpleanos-semana/', { params }).pipe(
+      map(response => this.normalizarPeriodo(response))
+    );
+  }
+
+  listarCumpleanosMes(mes: number): Observable<CumpleanosPeriodo> {
+    const params = new HttpParams().set('mes', mes.toString());
+    return this.http.get<CumpleanosPeriodoResponse>(this.apiBaseUrl + '/bailarines/cumpleanos-mes/', { params }).pipe(
+      map(response => this.normalizarPeriodo(response))
+    );
+  }
+
+  private normalizarPeriodo(response: CumpleanosPeriodoResponse | CumpleaneroDetalle[]): CumpleanosPeriodo {
+    if (Array.isArray(response)) return { fecha_inicio: null, fecha_fin: null, data: response };
+    return {
+      fecha_inicio: response?.fecha_inicio ?? null,
+      fecha_fin: response?.fecha_fin ?? null,
+      data: response?.data ?? []
+    };
   }
 
   private obtenerRegistro(response: PlantillaResponse | PlantillaCumpleanos): PlantillaCumpleanos {

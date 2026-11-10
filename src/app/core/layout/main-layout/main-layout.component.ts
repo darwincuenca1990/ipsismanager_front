@@ -98,6 +98,11 @@ export class MainLayoutComponent {
       const label = child.snapshot.data['breadcrumb'];
       if (label) {
         breadcrumbs.push({ label, routerLink: url });
+        const tabs = child.snapshot.data['breadcrumbTabs'] as Record<string, string> | undefined;
+        if (tabs) {
+          const tab = child.snapshot.queryParamMap.get('tab') ?? child.snapshot.data['breadcrumbDefaultTab'];
+          if (tab && tabs[tab]) breadcrumbs.push({ label: tabs[tab] });
+        }
           const parent = child.snapshot.data['breadcrumbParent'];
   if (parent) {
     // Insertar antes del último breadcrumb
@@ -136,7 +141,7 @@ export class MainLayoutComponent {
       {
         label: 'Presentaciones',
         icon: 'pi pi-book',
-        //routerLink: '/misRegistros',
+        routerLink: '/presentaciones',
         routerLinkActiveOptions: { exact: true }
       },
       {

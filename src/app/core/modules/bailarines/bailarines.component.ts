@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Subscription } from 'rxjs';
@@ -31,7 +32,8 @@ export class BailarinesComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly bailarinesService: BailarinesService,
-    private readonly commonsService: CommonsService
+    private readonly commonsService: CommonsService,
+    private readonly route: ActivatedRoute
   ) {}
 
   get opcionesElenco(): { value: Elenco; label: string }[] {
@@ -39,6 +41,12 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const estado = this.route.snapshot.queryParamMap.get('estado')?.toUpperCase();
+    if (estado === 'ACTIVO' || estado === 'INACTIVO') this.filtroEstado = estado;
+    const elenco = this.route.snapshot.queryParamMap.get('elenco')?.toUpperCase();
+    if (elenco && this.opcionesElenco.some(opcion => opcion.value === elenco)) {
+      this.filtroElenco = elenco as Elenco;
+    }
     this.cargarBailarines();
   }
 

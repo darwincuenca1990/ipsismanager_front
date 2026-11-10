@@ -1,20 +1,24 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { DashboardService, ElencoDashboard, ResumenDashboard } from '../../services/dashboard.service';
+import { DashboardService, ElencoDashboard, PresentacionesResumen, ResumenDashboard } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   resumen: ResumenDashboard | null = null;
+  presentaciones: PresentacionesResumen | null = null;
+  readonly nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   cargando = false;
   error = '';
   readonly hoy = new Date();
+  readonly mesActualIndice = new Date().getMonth();
   readonly elencos: ElencoDashboard[] = ['INFANTIL', 'PLANTA', 'MÁSTER'];
   private resumenSubscription?: Subscription;
 
@@ -45,6 +49,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.cargando = false;
       }
     });
+    this.dashboardService.obtenerPresentacionesPorMes(this.hoy.getFullYear()).subscribe(
+      presentaciones => this.presentaciones = presentaciones
+    );
   }
 
   porcentajeElenco(elenco: ElencoDashboard, estado: 'activos' | 'inactivos'): number {
