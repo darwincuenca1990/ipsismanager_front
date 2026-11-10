@@ -6,7 +6,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  const isAuthRequest = /\/auth\/(login|token\/refresh)\/?(?:\?.*)?$/.test(request.urlWithParams);
+  const isAuthRequest = /\/auth\/(login|refresh|token\/refresh)\/?(?:\?.*)?$/.test(request.urlWithParams);
   const accessToken = localStorage.getItem('access_token');
 
   if (isAuthRequest || !accessToken) {

@@ -63,13 +63,14 @@ export class AuthService {
   }
 
   refreshToken(refresh: string): Observable<any> {
-    const refreshUrl = `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.AUTH.PATH}${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.AUTH.CONTROLLERS.TOKEN}${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.AUTH.CONTROLLERS.REFRESH.REFRESH}`;
+    const refreshUrl = `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.AUTH.PATH}${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.    AUTH.CONTROLLERS.REFRESH.REFRESH}`;
     return this.http.post<any>(refreshUrl, { refresh }).pipe(
       tap((res: any) => {
-        const decoded: DecodedToken = jwtDecode(res.access);
-        this.setTokens(res.access, res.refresh ?? refresh, decoded.exp);
-      })
-    );
+            const payload = res?.data ?? res;
+            const decoded: DecodedToken = jwtDecode(payload.access);
+            this.setTokens(payload.access, payload.refresh ?? refresh, decoded.exp);
+          })
+        );
   }
 
   isLoggedIn(): boolean {
@@ -170,7 +171,13 @@ export class AuthService {
         this.lastActivityAt = Date.now();
         this.startSessionTimer();
       },
-      error: () => this.logout()
+      error: () => {
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo renovar la sesión',
+          text: constants.SWAL_MESSAGES.SESSION_NO_RENOVAR_SESION
+        });
+      }
     });
   }
 
