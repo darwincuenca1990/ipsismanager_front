@@ -92,6 +92,10 @@
 	box-shadow: 0 10px 28px rgb(15 23 42 / 5%);
 }
 
+.dancer-list {
+	container-type: inline-size;
+}
+
 .list-toolbar {
 	padding: 1.25rem 1.4rem;
 	border-bottom: 1px solid #edf0f5;
@@ -203,6 +207,12 @@
 	min-width: 840px;
 }
 
+.dancer-list .dancer-table {
+	min-width: 0;
+	width: 100%;
+	table-layout: fixed;
+}
+
 .dancer-table th {
 	padding: 0.85rem 1rem;
 	color: #64748b;
@@ -213,10 +223,49 @@
 	white-space: nowrap;
 }
 
+.dancer-list .dancer-table th {
+	padding: 0.85rem 0.35rem;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.dancer-table th label {
+	display: block;
+	margin-bottom: 0.3rem;
+}
+
+:host ::ng-deep .gender-filter .p-dropdown {
+	width: 100%;
+}
+
+:host ::ng-deep .gender-filter .p-dropdown-label {
+	padding: 0.35rem 0.45rem;
+	font-size: 0.75rem;
+}
+
+:host ::ng-deep .gender-filter .p-dropdown-trigger {
+	width: 1.75rem;
+}
+
 .dancer-table td {
 	padding: 0.9rem 1rem;
 	border-color: #edf0f5;
 	font-size: 0.88rem;
+}
+
+.dancer-list .dancer-table td {
+	padding: 0.9rem 0.35rem;
+	overflow-wrap: anywhere;
+}
+
+.dancer-list .dancer-table .icon-action {
+	width: 1.65rem;
+	margin-left: 0.1rem;
+}
+
+.dancer-list .photo-cell img,
+.dancer-list .photo-cell .dancer-avatar-placeholder {
+	max-width: 100%;
 }
 
 .dancer-name {
@@ -307,6 +356,74 @@
 	background: #e9eef5;
 	font-size: 1.5rem;
 	line-height: 1;
+}
+
+@container (max-width: 1150px) {
+	.dancer-list .list-toolbar {
+		align-items: stretch;
+		flex-wrap: wrap;
+	}
+
+	.dancer-list .list-filters {
+		flex-wrap: wrap;
+	}
+
+	.dancer-table,
+	.dancer-table thead,
+	.dancer-table tbody,
+	.dancer-table thead tr {
+		display: block;
+	}
+
+	.dancer-table colgroup {
+		display: none;
+	}
+
+	.dancer-table th:not(.gender-heading) {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.dancer-list .dancer-table .gender-heading {
+		display: block;
+		padding: 0.75rem 1rem;
+	}
+
+	:host ::ng-deep .gender-filter .p-dropdown {
+		width: 8rem;
+	}
+
+	.dancer-table .dancer-row {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		border-bottom: 1px solid #e5eaf2;
+	}
+
+	.dancer-list .dancer-table .dancer-row td {
+		display: block;
+		min-width: 0;
+		padding: 0.5rem 1rem;
+		border: 0;
+		text-align: left;
+	}
+
+	.dancer-table .dancer-row td::before {
+		content: attr(data-label);
+		display: block;
+		margin-bottom: 0.2rem;
+		color: #64748b;
+		font-size: 0.72rem;
+		font-weight: 600;
+	}
+
+	.dancer-table .actions-cell {
+		grid-column: 1 / -1;
+	}
 }
 
 @media (max-width: 640px) {

@@ -1,15 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { forkJoin } from 'rxjs';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { forkJoin, Subscription } from 'rxjs';
 import { Bailarin, BailarinesService } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 import { Coreografia, CoreografiasService } from '../../services/coreografias.service';
 import { obtenerTodasLasPaginas } from '../../services/paginas-api';
-import { FiltrosPresentaciones, Presentacion, PresentacionDatos, PresentacionesService, TipoPresentacion } from '../../services/presentaciones.service';
+import { Presentacion, PresentacionDatos, PresentacionesService, TipoPresentacion } from '../../services/presentaciones.service';
 import { SHARED_IMPORTS } from '../../../shared/shared-imports';
 
 function textoRequerido(control: AbstractControl): ValidationErrors | null {
@@ -19,11 +20,11 @@ function textoRequerido(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-presentaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DropdownModule, MultiSelectModule,SHARED_IMPORTS],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DropdownModule, MultiSelectModule, PaginatorModule, SHARED_IMPORTS],
   templateUrl: './presentaciones.component.html',
   styleUrl: './presentaciones.component.css'
 })
-export class PresentacionesComponent implements OnInit {
+export class PresentacionesComponent implements OnInit, OnDestroy {
   presentaciones: Presentacion[] = [];
   bailarines: Bailarin[] = [];
   coreografias: Coreografia[] = [];
@@ -33,6 +34,7 @@ export class PresentacionesComponent implements OnInit {
   idsCoreografiasSeleccionadas: number[] = [];
   asignaciones = new Map<number, Set<number>>();
   seleccionada: Presentacion | null = null;
+  detalle: Presentacion | null = null;
   mostrandoFormulario = false;
   cargando = false;
   cargandoCatalogos = false;
@@ -42,11 +44,19 @@ export class PresentacionesComponent implements OnInit {
   errorCatalogos = '';
   errorFormulario = '';
   mensajeExito = '';
-  siguiente: string | null = null;
-  anterior: string | null = null;
-  enlaceActual: string | undefined;
-  filtros = { mes: '', anio: '', lugar: '' };
-  filtrosAplicados: FiltrosPresentaciones = {};
+  busquedaBailarin = '';
+  private readonly hoy = new Date();
+  readonly opcionesMeses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ].map((label, indice) => ({ label, value: indice + 1 }));
+  readonly opcionesAnios = Array.from({ length: Math.max(0, this.hoy.getFullYear() + 2 - 2013) },
+    (_, indice) => ({ label: String(2013 + indice), value: 2013 + indice }));
+  filtros = { meses: [this.hoy.getMonth() + 1], anios: [this.hoy.getFullYear()], lugar: '' };
+  filtrosAplicados = { meses: [...this.filtros.meses], anios: [...this.filtros.anios], lugar: '' };
+  primeraFila = 0;
+  readonly filasPorPagina = 10;
+  private solicitudListado?: Subscription;
   readonly opcionesElenco = this.commons.opcionesElenco.filter(opcion =>
     opcion.value === 'INFANTIL' || opcion.value === 'PLANTA' || opcion.value === 'MÁSTER'
   );
@@ -79,18 +89,45 @@ export class PresentacionesComponent implements OnInit {
     this.cargarCatalogos();
   }
 
-  cargar(enlace?: string): void {
+  ngOnDestroy(): void {
+    this.solicitudListado?.unsubscribe();
+  }
+
+  get presentacionesFiltradas(): Presentacion[] {
+    const { meses, anios } = this.filtrosAplicados;
+    return this.presentaciones.filter(presentacion => {
+      const [anio, mes] = presentacion.fecha.split('-').map(Number);
+      return (!meses.length || meses.includes(mes)) && (!anios.length || anios.includes(anio));
+    });
+  }
+
+  get presentacionesPagina(): Presentacion[] {
+    return this.presentacionesFiltradas.slice(this.primeraFila, this.primeraFila + this.filasPorPagina);
+  }
+
+  cambiarPagina(evento: PaginatorState): void {
+    this.primeraFila = evento.first ?? 0;
+  }
+
+  cargar(): void {
+    this.solicitudListado?.unsubscribe();
     this.cargando = true;
     this.errorListado = '';
-    this.service.listar(this.filtrosAplicados, enlace).subscribe({
-      next: respuesta => {
-        this.enlaceActual = enlace;
-        this.presentaciones = Array.isArray(respuesta) ? respuesta : respuesta.results;
-        this.siguiente = Array.isArray(respuesta) ? null : respuesta.next;
-        this.anterior = Array.isArray(respuesta) ? null : respuesta.previous;
+    const filtros = { lugar: this.filtrosAplicados.lugar || undefined };
+    this.solicitudListado = obtenerTodasLasPaginas<Presentacion>(enlace =>
+      this.service.listar(filtros, enlace)
+    ).subscribe({
+      next: presentaciones => {
+        this.presentaciones = presentaciones;
+        const total = this.presentacionesFiltradas.length;
+        if (this.primeraFila >= total) {
+          this.primeraFila = total ? Math.floor((total - 1) / this.filasPorPagina) * this.filasPorPagina : 0;
+        }
         this.cargando = false;
       },
       error: error => {
+        this.presentaciones = [];
+        this.primeraFila = 0;
         this.cargando = false;
         this.errorListado = this.mensajeError(error, 'No se pudieron cargar las presentaciones.');
       }
@@ -98,14 +135,10 @@ export class PresentacionesComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
-    const mes = this.filtros.mes ? Number(this.filtros.mes) : undefined;
-    const anio = this.filtros.anio ? Number(this.filtros.anio) : undefined;
-    if ((mes !== undefined && (!Number.isInteger(mes) || mes < 1 || mes > 12)) ||
-        (anio !== undefined && (!Number.isInteger(anio) || anio < 1 || anio > 9999))) {
-      this.errorListado = 'Ingrese un mes entre 1 y 12 y un año entre 1 y 9999.';
-      return;
-    }
-    this.filtrosAplicados = { mes, anio, lugar: this.filtros.lugar.trim() || undefined };
+    this.filtrosAplicados = {
+      meses: [...this.filtros.meses], anios: [...this.filtros.anios], lugar: this.filtros.lugar.trim()
+    };
+    this.primeraFila = 0;
     this.cargar();
   }
 
@@ -151,8 +184,63 @@ export class PresentacionesComponent implements OnInit {
     });
   }
 
+  get bailarinesFiltrados(): Bailarin[] {
+    const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+    const busqueda = normalizar(this.busquedaBailarin.trim());
+    if (!busqueda) return this.bailarinesVisibles;
+    return this.bailarinesVisibles.filter(bailarin =>
+      normalizar(`${bailarin.apellidos} ${bailarin.nombres}`).includes(busqueda) ||
+      normalizar(`${bailarin.nombres} ${bailarin.apellidos}`).includes(busqueda) ||
+      (bailarin.cedula ?? '').includes(busqueda)
+    );
+  }
+
+  get gruposBailarines(): { elenco: string; bailarines: Bailarin[] }[] {
+    const bailarines = this.bailarinesFiltrados;
+    if (this.form.controls.tipo_presentacion.value !== 'FESTIVALIPSIS') {
+      return bailarines.length ? [{ elenco: '', bailarines }] : [];
+    }
+    return this.agruparPorElenco(bailarines, bailarin => bailarin.elenco)
+      .map(grupo => ({ elenco: grupo.elenco, bailarines: grupo.elementos }));
+  }
+
+  identificarGrupo(_indice: number, grupo: { elenco: string }): string {
+    return grupo.elenco;
+  }
+
   get coreografiasVisibles(): Coreografia[] {
     return this.coreografias.filter(c => this.coreografiasSeleccionadas.has(c.id));
+  }
+
+  get coreografiasDetalle(): { id: number; nombre: string }[] {
+    if (!this.detalle) return [];
+    const ids = [...new Set(this.detalle.bitacora.flatMap(item => item.coreografias))];
+    return ids.map(id => ({
+      id,
+      nombre: this.coreografias.find(coreografia => coreografia.id === id)?.nombre ?? `Coreografía #${id}`
+    })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+
+  get bitacoraDetalle(): Presentacion['bitacora'] {
+    if (!this.detalle) return [];
+    const ordenGenero = (id: number) => {
+      const genero = this.bailarines.find(bailarin => bailarin.id === id)?.genero;
+      return genero === 'FEMENINO' ? 0 : genero === 'MASCULINO' ? 1 : 2;
+    };
+    return [...this.detalle.bitacora].sort((a, b) =>
+      ordenGenero(a.bailarin) - ordenGenero(b.bailarin) ||
+      this.nombreBailarin(a.bailarin).localeCompare(this.nombreBailarin(b.bailarin), 'es')
+    );
+  }
+
+  get agruparDetallePorElenco(): boolean {
+    return this.detalle?.tipo_presentacion === 'FESTIVALIPSIS' && this.detalle.elencos.length > 1;
+  }
+
+  get gruposBitacoraDetalle(): { elenco: string; elementos: Presentacion['bitacora'] }[] {
+    const registros = this.bitacoraDetalle;
+    if (!this.agruparDetallePorElenco) return registros.length ? [{ elenco: '', elementos: registros }] : [];
+    return this.agruparPorElenco(registros, registro => this.bailarinDetalle(registro.bailarin)?.elenco);
   }
 
   get costoNeto(): string {
@@ -168,6 +256,7 @@ export class PresentacionesComponent implements OnInit {
 
   nuevo(): void {
     this.mensajeExito = '';
+    this.busquedaBailarin = '';
     this.seleccionada = null;
     this.actualizarOpcionesPersonaCargo();
     this.form.reset({ tipo_presentacion: 'UN ELENCO' });
@@ -180,6 +269,21 @@ export class PresentacionesComponent implements OnInit {
     this.mostrandoFormulario = true;
   }
 
+  ver(id: number): void {
+    this.cargando = true;
+    this.errorListado = '';
+    this.service.obtener(id).subscribe({
+      next: presentacion => {
+        this.detalle = presentacion;
+        this.cargando = false;
+      },
+      error: error => {
+        this.cargando = false;
+        this.errorListado = this.mensajeError(error, 'No se pudo cargar el detalle de la presentación.');
+      }
+    });
+  }
+
   editar(id: number): void {
     this.mensajeExito = '';
     this.cargando = true;
@@ -187,6 +291,7 @@ export class PresentacionesComponent implements OnInit {
     this.service.obtener(id).subscribe({
       next: presentacion => {
         this.seleccionada = presentacion;
+        this.busquedaBailarin = '';
         this.actualizarOpcionesPersonaCargo();
         this.form.reset({
           fecha: presentacion.fecha,
@@ -320,7 +425,7 @@ export class PresentacionesComponent implements OnInit {
         this.guardando = false;
         this.mostrandoFormulario = false;
         this.mensajeExito = this.seleccionada ? 'Presentación actualizada correctamente.' : 'Presentación creada correctamente.';
-        this.cargar(this.seleccionada ? this.enlaceActual : undefined);
+        this.cargar();
       },
       error: error => {
         this.guardando = false;
@@ -332,6 +437,27 @@ export class PresentacionesComponent implements OnInit {
   nombreBailarin(id: number): string {
     const bailarin = this.bailarines.find(item => item.id === id);
     return bailarin ? `${bailarin.apellidos} ${bailarin.nombres}` : `Bailarín #${id}`;
+  }
+
+  bailarinDetalle(id: number): Bailarin | undefined {
+    return this.bailarines.find(bailarin => bailarin.id === id);
+  }
+
+  private agruparPorElenco<T>(elementos: T[], obtenerElenco: (elemento: T) => string | null | undefined): { elenco: string; elementos: T[] }[] {
+    const grupos = new Map<string, T[]>();
+    for (const elemento of elementos) {
+      const elenco = obtenerElenco(elemento) || 'SIN ELENCO';
+      const grupo = grupos.get(elenco) ?? [];
+      grupo.push(elemento);
+      grupos.set(elenco, grupo);
+    }
+    const orden: string[] = this.commons.opcionesElenco.map(opcion => opcion.value);
+    return [...grupos].map(([elenco, grupo]) => ({ elenco, elementos: grupo })).sort((a, b) => {
+      const indiceA = orden.indexOf(a.elenco);
+      const indiceB = orden.indexOf(b.elenco);
+      return (indiceA < 0 ? orden.length : indiceA) - (indiceB < 0 ? orden.length : indiceB) ||
+        a.elenco.localeCompare(b.elenco, 'es');
+    });
   }
 
   private compararNombre(a: Bailarin, b: Bailarin): number {

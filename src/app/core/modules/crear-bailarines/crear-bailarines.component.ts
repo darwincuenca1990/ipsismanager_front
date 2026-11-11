@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { MessageModule } from 'primeng/message';
@@ -82,9 +83,9 @@ export class CrearBailarinesComponent implements OnChanges {
     celular: ['', [Validators.maxLength(this.limites.celular), Validators.pattern(/^\d*$/)]],
     correo: ['', [Validators.email, Validators.maxLength(this.limites.correo)]],
     estudia: [false],
-    institucion_estudio: ['', Validators.maxLength(this.limites.institucion_estudio)],
+    institucion_estudio: [{ value: '', disabled: true }, Validators.maxLength(this.limites.institucion_estudio)],
     trabaja: [false],
-    lugar_trabajo: ['', Validators.maxLength(this.limites.lugar_trabajo)],
+    lugar_trabajo: [{ value: '', disabled: true }, Validators.maxLength(this.limites.lugar_trabajo)],
     direccion_domicilio: ['', Validators.maxLength(this.limites.direccion_domicilio)],
     referencia_domicilio: ['', Validators.maxLength(this.limites.referencia_domicilio)],
     vive_con: [''],
@@ -123,7 +124,24 @@ export class CrearBailarinesComponent implements OnChanges {
     private readonly fb: FormBuilder,
     private readonly commonsService: CommonsService,
     private readonly elemento: ElementRef<HTMLElement>
-  ) {}
+  ) {
+    this.form.controls.estudia.valueChanges.pipe(takeUntilDestroyed()).subscribe(estudia => {
+      this.actualizarCampoCondicional(this.form.controls.institucion_estudio, !!estudia);
+    });
+    this.form.controls.trabaja.valueChanges.pipe(takeUntilDestroyed()).subscribe(trabaja => {
+      this.actualizarCampoCondicional(this.form.controls.lugar_trabajo, !!trabaja);
+    });
+  }
+
+  private actualizarCampoCondicional(control: AbstractControl, habilitado: boolean): void {
+    if (habilitado) {
+      control.addValidators(Validators.required);
+      control.enable({ emitEvent: false });
+    } else {
+      control.removeValidators(Validators.required);
+      control.disable({ emitEvent: false });
+    }
+  }
 
   get opcionesElenco(): { value: Elenco; label: string }[] {
     return this.commonsService.opcionesElenco;

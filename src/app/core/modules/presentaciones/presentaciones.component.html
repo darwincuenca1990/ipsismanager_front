@@ -13,8 +13,18 @@
   <section class="card-panel">
     <h2>Listado de presentaciones</h2>
     <form class="filters" (ngSubmit)="aplicarFiltros()">
-      <label>Mes<input type="number" class="form-control" name="mes" [(ngModel)]="filtros.mes" min="1" max="12" placeholder="Todos"></label>
-      <label>Año<input type="number" class="form-control" name="anio" [(ngModel)]="filtros.anio" min="1" max="9999" placeholder="Todos"></label>
+      <div class="filter-select">
+        <label for="filtro-meses">Meses</label>
+        <p-multiSelect inputId="filtro-meses" name="meses" [(ngModel)]="filtros.meses" [options]="opcionesMeses"
+          optionLabel="label" optionValue="value" placeholder="Todos los meses" selectedItemsLabel="{0} meses seleccionados"
+          appendTo="body" panelStyleClass="presentation-date-filter-panel" scrollHeight="200px" [style]="{width: '100%'}"></p-multiSelect>
+      </div>
+      <div class="filter-select">
+        <label for="filtro-anios">Años</label>
+        <p-multiSelect inputId="filtro-anios" name="anios" [(ngModel)]="filtros.anios" [options]="opcionesAnios"
+          optionLabel="label" optionValue="value" placeholder="Todos los años" selectedItemsLabel="{0} años seleccionados"
+          appendTo="body" panelStyleClass="presentation-date-filter-panel" scrollHeight="200px" [style]="{width: '100%'}"></p-multiSelect>
+      </div>
       <label>Lugar<input class="form-control" name="lugar" [(ngModel)]="filtros.lugar" placeholder="Buscar lugar"></label>
       <button type="submit" class="btn btn-outline-primary" [disabled]="cargando">Filtrar</button>
     </form>
@@ -25,23 +35,72 @@
         <tbody>
           <tr *ngIf="cargando"><td colspan="8" class="empty-state">Cargando presentaciones…</td></tr>
           <ng-container *ngIf="!cargando">
-            <tr *ngFor="let presentacion of presentaciones">
+            <tr *ngFor="let presentacion of presentacionesPagina">
               <td>{{ presentacion.fecha }}</td><td>{{ presentacion.hora_presentacion }}</td><td>{{ presentacion.lugar }}</td>
               <td>{{ nombreBailarin(presentacion.persona_cargo) }}</td><td>{{ presentacion.tipo_presentacion }}</td>
               <td>{{ presentacion.elencos.join(', ') }}</td><td>{{ presentacion.costo_neto }}</td>
-              <td><button type="button" class="btn btn-sm btn-outline-primary" (click)="editar(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos">Editar</button></td>
+              <td class="list-actions">
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="ver(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos" [attr.aria-label]="'Ver presentación de ' + presentacion.lugar">Ver</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="editar(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos">Editar</button>
+              </td>
             </tr>
-            <tr *ngIf="!presentaciones.length && !errorListado"><td colspan="8" class="empty-state">No hay presentaciones para mostrar.</td></tr>
+            <tr *ngIf="!presentacionesFiltradas.length && !errorListado"><td colspan="8" class="empty-state">No hay presentaciones para mostrar.</td></tr>
           </ng-container>
         </tbody>
       </table>
     </div>
-    <nav *ngIf="anterior || siguiente" class="pagination-controls" aria-label="Paginación de presentaciones">
-      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="!anterior || cargando" (click)="cargar(anterior || undefined)">Anterior</button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="!siguiente || cargando" (click)="cargar(siguiente || undefined)">Siguiente</button>
+    <nav *ngIf="!cargando && presentacionesFiltradas.length > filasPorPagina" aria-label="Paginación de presentaciones">
+      <p-paginator [first]="primeraFila" [rows]="filasPorPagina" [totalRecords]="presentacionesFiltradas.length"
+        [pageLinkSize]="3" [showFirstLastIcon]="false" (onPageChange)="cambiarPagina($event)"></p-paginator>
     </nav>
   </section>
 </main>
+
+<div *ngIf="detalle as presentacion" class="modal-backdrop-custom">
+  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="detalle-presentacion-titulo">
+    <header class="modal-heading">
+      <h2 id="detalle-presentacion-titulo">Detalle de la presentación</h2>
+      <button type="button" class="close-modal" (click)="detalle = null" aria-label="Cerrar detalle">&times;</button>
+    </header>
+    <h3>Datos de la presentación</h3>
+    <dl class="detail-grid">
+      <div><dt>Fecha</dt><dd>{{ presentacion.fecha }}</dd></div>
+      <div><dt>Hora de presentación</dt><dd>{{ presentacion.hora_presentacion }}</dd></div>
+      <div><dt>Lugar</dt><dd>{{ presentacion.lugar }}</dd></div>
+      <div><dt>Persona a cargo</dt><dd>{{ nombreBailarin(presentacion.persona_cargo) }}</dd></div>
+      <div><dt>Costo total</dt><dd>{{ presentacion.costo_total_presentacion }}</dd></div>
+      <div><dt>Costo de transporte</dt><dd>{{ presentacion.costo_transporte }}</dd></div>
+      <div><dt>Costo neto</dt><dd>{{ presentacion.costo_neto }}</dd></div>
+      <div><dt>Nombre del transporte</dt><dd>{{ presentacion.nombre_transporte }}</dd></div>
+      <div><dt>Tipo de presentación</dt><dd>{{ presentacion.tipo_presentacion }}</dd></div>
+      <div><dt>Elencos</dt><dd>{{ presentacion.elencos.join(', ') || '—' }}</dd></div>
+      <div><dt>Coreografías</dt><dd><span *ngFor="let coreografia of coreografiasDetalle; let ultima = last">{{ coreografia.nombre }}{{ ultima ? '' : ', ' }}</span><span *ngIf="!coreografiasDetalle.length">—</span></dd></div>
+    </dl>
+    <section class="assignment-section">
+      <h3>Bailarines y coreografías</h3>
+      <div class="table-scroll">
+        <table class="table assignment-table align-middle">
+          <thead><tr><th scope="col">Bailarín</th><th scope="col">Género</th><th scope="col">Elenco</th><th *ngFor="let coreografia of coreografiasDetalle" scope="col">{{ coreografia.nombre }}</th></tr></thead>
+          <tbody *ngFor="let grupo of gruposBitacoraDetalle; trackBy: identificarGrupo">
+            <tr *ngIf="agruparDetallePorElenco" class="elenco-separator">
+              <th scope="rowgroup" [attr.colspan]="3 + coreografiasDetalle.length">Elenco: {{ grupo.elenco }}</th>
+            </tr>
+            <tr *ngFor="let registro of grupo.elementos">
+              <th scope="row">{{ nombreBailarin(registro.bailarin) }}</th>
+              <td>{{ bailarinDetalle(registro.bailarin)?.genero || '—' }}</td>
+              <td>{{ bailarinDetalle(registro.bailarin)?.elenco || '—' }}</td>
+              <td *ngFor="let coreografia of coreografiasDetalle">{{ registro.coreografias.includes(coreografia.id) ? 'Sí' : 'No' }}</td>
+            </tr>
+          </tbody>
+          <tbody *ngIf="!presentacion.bitacora.length">
+            <tr><td [attr.colspan]="3 + coreografiasDetalle.length" class="empty-state">No hay bailarines registrados en esta presentación.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="form-actions"><button type="button" class="btn btn-outline-secondary" (click)="detalle = null">Cerrar</button></div>
+  </section>
+</div>
 
 <div *ngIf="mostrandoFormulario" class="modal-backdrop-custom">
   <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="presentacion-titulo">
@@ -60,7 +119,9 @@
         <div class="select-field">
           <label for="persona-cargo">Persona a cargo *</label>
           <p-dropdown id="selector-persona-cargo" inputId="persona-cargo" formControlName="persona_cargo"
-            [options]="opcionesPersonaCargo" optionLabel="label" optionValue="value" [autoDisplayFirst]="false"
+            [options]="opcionesPersonaCargo" optionLabel="label" optionValue="value" [autoDisplayFirst]="false" [filter]="true"
+            filterBy="label" filterPlaceholder="Buscar persona" ariaFilterLabel="Buscar persona a cargo" [resetFilterOnHide]="true"
+            emptyFilterMessage="No se encontraron personas."
             placeholder="Seleccione" emptyMessage="No hay bailarines disponibles." appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
         </div>
         <label>Costo total *<input type="text" inputmode="decimal" class="form-control" formControlName="costo_total_presentacion" maxlength="13" placeholder="0.00" required></label>
@@ -98,18 +159,27 @@
 
       <section class="assignment-section">
         <h3>Bailarines y coreografías</h3>
-        <p>Selecciona a los bailarines y marca las coreografías que realiza cada uno. Se muestran primero mujeres, luego hombres y finalmente registros sin género.</p>
-        <div *ngIf="hayAsignacionesFueraDelElenco" class="alert alert-warning" role="alert">Hay bailarines seleccionados fuera de los elencos elegidos. Desmárcalos antes de guardar.</div>
+        <p>Selecciona a los bailarines y marca las coreografías que realiza cada uno. {{ form.controls.tipo_presentacion.value === 'FESTIVALIPSIS' ? 'En cada elenco se muestran' : 'Se muestran' }} primero mujeres, luego hombres y finalmente registros sin género.</p>
+        <label class="dancer-search">Buscar bailarín
+          <input type="search" class="form-control" [(ngModel)]="busquedaBailarin" [ngModelOptions]="{standalone: true}"
+            placeholder="Nombre, apellido o cédula">
+        </label>
+        <div *ngIf="hayAsignacionesFueraDelElenco" class="alert alert-warning" role="alert">Hay bailarines seleccionados fuera de los elencos elegidos. Desmárcalos antes de guardar.<span *ngIf="busquedaBailarin.trim()"> Limpia la búsqueda para verlos.</span></div>
         <div class="table-scroll">
           <table class="table assignment-table align-middle">
             <thead><tr><th>Bailarín</th><th>Elenco</th><th *ngFor="let coreografia of coreografiasVisibles">{{ coreografia.nombre }}</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let bailarin of bailarinesVisibles">
+            <tbody *ngFor="let grupo of gruposBailarines; trackBy: identificarGrupo">
+              <tr *ngIf="form.controls.tipo_presentacion.value === 'FESTIVALIPSIS'" class="elenco-separator">
+                <th scope="rowgroup" [attr.colspan]="2 + coreografiasVisibles.length">Elenco: {{ grupo.elenco }}</th>
+              </tr>
+              <tr *ngFor="let bailarin of grupo.bailarines">
                 <td><label class="check-option"><input type="checkbox" [checked]="asignaciones.has(bailarin.id)" (change)="seleccionarBailarin(bailarin.id, $any($event.target).checked)"> {{ bailarin.apellidos }} {{ bailarin.nombres }} ({{ bailarin.genero || 'SIN GÉNERO' }}){{ activos.has(bailarin.id) ? '' : ' · Inactivo' }}</label></td>
                 <td>{{ bailarin.elenco }}</td>
                 <td *ngFor="let coreografia of coreografiasVisibles"><input type="checkbox" [attr.aria-label]="coreografia.nombre + ' para ' + bailarin.nombres + ' ' + bailarin.apellidos" [disabled]="!asignaciones.has(bailarin.id)" [checked]="asignaciones.get(bailarin.id)?.has(coreografia.id) || false" (change)="asignarCoreografia(bailarin.id, coreografia.id, $any($event.target).checked)"></td>
               </tr>
-              <tr *ngIf="!bailarinesVisibles.length"><td [attr.colspan]="2 + coreografiasVisibles.length" class="empty-state">Seleccione un elenco para mostrar bailarines activos.</td></tr>
+            </tbody>
+            <tbody *ngIf="!bailarinesFiltrados.length">
+              <tr><td [attr.colspan]="2 + coreografiasVisibles.length" class="empty-state">{{ bailarinesVisibles.length ? 'No hay bailarines que coincidan con la búsqueda.' : elencos.length ? 'No hay bailarines disponibles para los elencos seleccionados.' : 'Seleccione un elenco para mostrar bailarines activos.' }}</td></tr>
             </tbody>
           </table>
         </div>

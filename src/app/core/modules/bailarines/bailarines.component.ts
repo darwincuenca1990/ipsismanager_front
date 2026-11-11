@@ -4,17 +4,19 @@ import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { MessageModule } from 'primeng/message';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
-import { Bailarin, BailarinFormValue, BailarinesService, GrupoFamiliar, Inscripcion } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, BailarinesService, Genero, GrupoFamiliar, Inscripcion } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
+import { obtenerTodasLasPaginas } from '../../services/paginas-api';
 import { CrearBailarinesComponent } from '../crear-bailarines/crear-bailarines.component';
 
 @Component({
   selector: 'app-bailarines',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent, MessageModule, DropdownModule],
+  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent, MessageModule, DropdownModule, PaginatorModule],
   templateUrl: './bailarines.component.html',
   styleUrl: './bailarines.component.css'
 })
@@ -24,6 +26,14 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   busqueda = '';
   filtroElenco: Elenco | 'TODOS' = 'TODOS';
   filtroEstado: 'ACTIVO' | 'INACTIVO' = 'ACTIVO';
+  filtroGenero: Genero | 'TODOS' = 'TODOS';
+  primeraFila = 0;
+  readonly filasPorPagina = 10;
+  readonly opcionesFiltroGenero: { value: Genero | 'TODOS'; label: string }[] = [
+    { value: 'TODOS', label: 'Todos' },
+    { value: 'FEMENINO', label: 'Femenino' },
+    { value: 'MASCULINO', label: 'Masculino' }
+  ];
   cargando = false;
   guardando = false;
   mostrarFormulario = false;
@@ -38,6 +48,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   errorCandidatos = '';
   readonly opcionesFiltroElenco: { value: Elenco | 'TODOS'; label: string }[];
   private solicitudesFoto: Subscription[] = [];
+  private solicitudListado?: Subscription;
 
   constructor(
     private readonly bailarinesService: BailarinesService,
@@ -122,6 +133,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.solicitudListado?.unsubscribe();
     this.limpiarFotografias();
   }
 
@@ -131,21 +143,41 @@ export class BailarinesComponent implements OnInit, OnDestroy {
       const estadoReal = this.estadoBailarin(bailarin) ?? 'ACTIVO';
       const coincideEstado = estadoReal === this.filtroEstado;
       const coincideElenco = this.filtroElenco === 'TODOS' || bailarin.elenco === this.filtroElenco;
+      const coincideGenero = this.filtroGenero === 'TODOS' || bailarin.genero === this.filtroGenero;
       const coincideTexto = !texto || `${bailarin.apellidos} ${bailarin.nombres} ${bailarin.cedula}`.toLocaleLowerCase().includes(texto);
-      return coincideElenco && coincideEstado && coincideTexto;
+      return coincideElenco && coincideEstado && coincideGenero && coincideTexto;
     });
   }
 
+  get bailarinesPagina(): Bailarin[] {
+    return this.bailarinesFiltrados.slice(this.primeraFila, this.primeraFila + this.filasPorPagina);
+  }
+
+  cambiarPagina(evento: PaginatorState): void {
+    this.primeraFila = evento.first ?? 0;
+  }
+
+  reiniciarPagina(): void {
+    this.primeraFila = 0;
+  }
+
   cargarBailarines(): void {
+    this.solicitudListado?.unsubscribe();
     this.cargando = true;
     this.error = '';
-    this.bailarinesService.listar({
+    const filtros = {
       elenco: this.filtroElenco === 'TODOS' ? 'todos' : this.filtroElenco,
       estado: this.filtroEstado
-    }).subscribe({
-      next: response => {
-        const rows = Array.isArray(response) ? response : response?.results;
-        this.bailarines = Array.isArray(rows) ? rows : [];
+    };
+    this.solicitudListado = obtenerTodasLasPaginas<Bailarin>(enlace =>
+      enlace ? this.bailarinesService.listar(filtros, enlace) : this.bailarinesService.listar(filtros)
+    ).subscribe({
+      next: bailarines => {
+        this.bailarines = bailarines;
+        const total = this.bailarinesFiltrados.length;
+        if (this.primeraFila >= total) {
+          this.primeraFila = total ? Math.floor((total - 1) / this.filasPorPagina) * this.filasPorPagina : 0;
+        }
         this.cargarFotografias(this.bailarines);
         this.cargando = false;
       },
@@ -356,6 +388,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   }
 
   cambiarFiltros(): void {
+    this.reiniciarPagina();
     this.cargarBailarines();
   }
 

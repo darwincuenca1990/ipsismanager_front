@@ -85,7 +85,7 @@
 		</div>
 	</section>
 
-	<section *ngIf="vista === 'listado'" class="list-card" aria-label="Listado de bailarines">
+	<section *ngIf="vista === 'listado'" class="list-card dancer-list" aria-label="Listado de bailarines">
 		<div class="list-toolbar">
 			<div>
 				<h2>Listado</h2>
@@ -109,20 +109,35 @@
 				</fieldset>
 				<label class="search-box">
 					<i class="pi pi-search" aria-hidden="true"></i>
-					<input type="search" [(ngModel)]="busqueda" placeholder="Buscar por nombre o cédula" aria-label="Buscar bailarines">
+					<input type="search" [(ngModel)]="busqueda" (ngModelChange)="reiniciarPagina()" placeholder="Buscar por nombre o cédula" aria-label="Buscar bailarines">
 				</label>
 			</div>
 		</div>
 
 		<div *ngIf="error" class="error-message" role="alert"><p-message severity="error" [text]="error"></p-message></div>
 
-		<div class="table-scroll">
+		<nav *ngIf="bailarinesFiltrados.length > filasPorPagina" aria-label="Paginación superior de bailarines">
+			<p-paginator [first]="primeraFila" [rows]="filasPorPagina" [totalRecords]="bailarinesFiltrados.length"
+				[pageLinkSize]="3" [showFirstLastIcon]="false" (onPageChange)="cambiarPagina($event)"></p-paginator>
+		</nav>
+
+		<div class="dancer-table-container">
 			<table class="table dancer-table align-middle mb-0">
+				<colgroup>
+					<col style="width: 5%"><col style="width: 15%"><col style="width: 11%"><col style="width: 10%">
+					<col style="width: 8%"><col style="width: 9%"><col style="width: 13%"><col style="width: 9%">
+					<col style="width: 6%"><col style="width: 6%"><col style="width: 8%">
+				</colgroup>
 				<thead>
 					<tr>
 						<th scope="col" class="photo-heading">Foto</th>
 						<th scope="col">Bailarín</th>
-						<th scope="col">Género</th>
+						<th scope="col" class="gender-heading">
+							<label for="filtro-genero">Género</label>
+							<p-dropdown class="gender-filter" inputId="filtro-genero" ariaLabel="Filtrar por género" [(ngModel)]="filtroGenero"
+								(ngModelChange)="reiniciarPagina()" [options]="opcionesFiltroGenero" optionLabel="label" optionValue="value"
+								[autoDisplayFirst]="false" appendTo="body"></p-dropdown>
+						</th>
 						<th scope="col">Elenco</th>
 						<th scope="col">Estado</th>
 						<th scope="col">Cédula</th>
@@ -140,29 +155,29 @@
 							<span>Cargando bailarines…</span>
 						</td>
 					</tr>
-					<tr *ngFor="let bailarin of bailarinesFiltrados">
-						<td class="photo-cell">
+					<tr *ngFor="let bailarin of bailarinesPagina" class="dancer-row">
+						<td class="photo-cell" data-label="Foto">
 							<img *ngIf="fotografiaUrl(bailarin) as fotoUrl; else fotoPorDefecto" [src]="fotoUrl" [alt]="'Fotografía de ' + bailarin.nombres" class="dancer-thumbnail">
 							<ng-template #fotoPorDefecto><span class="dancer-avatar-placeholder" aria-label="Sin fotografía"><i class="pi pi-user" aria-hidden="true"></i></span></ng-template>
 						</td>
-						<td>
+						<td data-label="Bailarín">
 							<div class="dancer-name">{{ bailarin.apellidos }} {{ bailarin.nombres }}</div>
 							<small class="muted">{{ bailarin.correo || 'Sin correo registrado' }}</small>
 						</td>
-						<td>{{ bailarin.genero || '—' }}</td>
-						<td>{{ etiquetaElenco(bailarin.elenco) }}</td>
-						<td>
+						<td data-label="Género">{{ bailarin.genero || '—' }}</td>
+						<td data-label="Elenco">{{ etiquetaElenco(bailarin.elenco) }}</td>
+						<td data-label="Estado">
 							<span *ngIf="estadoBailarin(bailarin) as estado" class="status-pill" [class.status-yes]="estado === 'ACTIVO'" [class.status-inactive]="estado === 'INACTIVO'">
 								{{ estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
 							</span>
 							<span *ngIf="!estadoBailarin(bailarin)" class="muted">Sin inscripción</span>
 						</td>
-						<td>{{ bailarin.cedula }}</td>
-						<td>{{ nombreRepresentante(bailarin) }}</td>
-						<td>{{ bailarin.celular || '—' }}</td>
-						<td><span class="status-pill" [class.status-yes]="bailarin.estudia">{{ bailarin.estudia ? 'Sí' : 'No' }}</span></td>
-						<td><span class="status-pill" [class.status-yes]="bailarin.trabaja">{{ bailarin.trabaja ? 'Sí' : 'No' }}</span></td>
-						<td class="actions-cell">
+						<td data-label="Cédula">{{ bailarin.cedula }}</td>
+						<td data-label="Representante">{{ nombreRepresentante(bailarin) }}</td>
+						<td data-label="Celular">{{ bailarin.celular || '—' }}</td>
+						<td data-label="Estudia"><span class="status-pill" [class.status-yes]="bailarin.estudia">{{ bailarin.estudia ? 'Sí' : 'No' }}</span></td>
+						<td data-label="Trabaja"><span class="status-pill" [class.status-yes]="bailarin.trabaja">{{ bailarin.trabaja ? 'Sí' : 'No' }}</span></td>
+						<td class="actions-cell" data-label="Acciones">
 							<button type="button" class="icon-action view-action" (click)="ver(bailarin)" aria-label="Ver datos del bailarín" title="Ver">
 								<i class="pi pi-eye" aria-hidden="true"></i>
 							</button>
@@ -176,12 +191,16 @@
 					</tr>
 					<tr *ngIf="!cargando && bailarinesFiltrados.length === 0">
 						<td colspan="11" class="empty-state">
-							{{ busqueda || filtroElenco !== 'TODOS' || filtroEstado !== 'ACTIVO' ? 'No hay bailarines que coincidan con los filtros.' : 'Todavía no hay bailarines activos registrados.' }}
+							{{ busqueda || filtroElenco !== 'TODOS' || filtroGenero !== 'TODOS' || filtroEstado !== 'ACTIVO' ? 'No hay bailarines que coincidan con los filtros.' : 'Todavía no hay bailarines activos registrados.' }}
 						</td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
+		<nav *ngIf="bailarinesFiltrados.length > filasPorPagina" aria-label="Paginación inferior de bailarines">
+			<p-paginator [first]="primeraFila" [rows]="filasPorPagina" [totalRecords]="bailarinesFiltrados.length"
+				[pageLinkSize]="3" [showFirstLastIcon]="false" (onPageChange)="cambiarPagina($event)"></p-paginator>
+		</nav>
 	</section>
 </main>
 

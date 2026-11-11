@@ -43,8 +43,8 @@
 			<label><input type="checkbox" formControlName="autorizado_publicacion"> Autoriza publicación de fotografía</label>
 		</div>
 		<div class="form-grid extra-fields">
-			<label>Institución educativa<input class="form-control" formControlName="institucion_estudio" [attr.maxlength]="limites.institucion_estudio"><small class="character-counter">{{ caracteresUsados('institucion_estudio') }}/{{ limites.institucion_estudio }}</small></label>
-			<label>Lugar de trabajo<input class="form-control" formControlName="lugar_trabajo" [attr.maxlength]="limites.lugar_trabajo"><small class="character-counter">{{ caracteresUsados('lugar_trabajo') }}/{{ limites.lugar_trabajo }}</small></label>
+			<label><span class="field-label">Institución educativa <span *ngIf="form.controls.estudia.value" class="required-mark">*</span></span><input class="form-control" formControlName="institucion_estudio" [attr.aria-required]="!!form.controls.estudia.value" [attr.maxlength]="limites.institucion_estudio"><small class="character-counter">{{ caracteresUsados('institucion_estudio') }}/{{ limites.institucion_estudio }}</small></label>
+			<label><span class="field-label">Lugar de trabajo <span *ngIf="form.controls.trabaja.value" class="required-mark">*</span></span><input class="form-control" formControlName="lugar_trabajo" [attr.aria-required]="!!form.controls.trabaja.value" [attr.maxlength]="limites.lugar_trabajo"><small class="character-counter">{{ caracteresUsados('lugar_trabajo') }}/{{ limites.lugar_trabajo }}</small></label>
 			<label class="form-field">Fecha de autorización<input class="form-control date-input" type="date" formControlName="fecha_autorizacion_publicacion" [max]="fechaMaxima"></label>
 			<label class="wide">Detalle de enfermedad<textarea class="form-control" formControlName="detalle_enfermedad" rows="2" [attr.maxlength]="limites.detalle_enfermedad"></textarea><small class="character-counter">{{ caracteresUsados('detalle_enfermedad') }}/{{ limites.detalle_enfermedad }}</small></label>
 		</div>
