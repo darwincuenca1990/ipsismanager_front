@@ -145,6 +145,12 @@ export class MainLayoutComponent {
         routerLinkActiveOptions: { exact: true }
       },
       {
+        label: 'Coreografías',
+        icon: 'pi pi-video',
+        routerLink: '/coreografias',
+        routerLinkActiveOptions: { exact: true }
+      },
+      {
         label: 'Ipsis Boot',
         icon: 'pi pi-android',
         //routerLink: '/misRegistros',
@@ -174,7 +180,13 @@ export class MainLayoutComponent {
         icon: 'pi pi-book',
         routerLink: '/cumpleanos',
         routerLinkActiveOptions: { exact: true }
-      }                
+      },
+      {
+        label: 'Coreografías',
+        icon: 'pi pi-video',
+        routerLink: '/coreografias',
+        routerLinkActiveOptions: { exact: true }
+      }
     ];
     this.menuItems = [...this.allMenuItemsCopy]
   }

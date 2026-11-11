@@ -6,6 +6,7 @@ import { DashboardComponent } from './core/modules/dashboard/dashboard.component
 import { BailarinesComponent } from './core/modules/bailarines/bailarines.component';
 import { CumpleanosComponent } from './core/modules/cumpleanos/cumpleanos.component';
 import { PresentacionesComponent } from './core/modules/presentaciones/presentaciones.component';
+import { CoreografiasComponent } from './core/modules/coreografias/coreografias.component';
 
 
 export const routes: Routes = [
@@ -41,6 +42,12 @@ export const routes: Routes = [
             path: 'presentaciones',
                 component: PresentacionesComponent,
                 data: { breadcrumb: 'Presentaciones' },
+                canActivate: [AuthGuard],
+            },
+            {
+                path: 'coreografias',
+                component: CoreografiasComponent,
+                data: { breadcrumb: 'Coreografías' },
                 canActivate: [AuthGuard],
             },
         ]
