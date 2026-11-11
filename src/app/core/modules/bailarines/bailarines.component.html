@@ -40,6 +40,7 @@
 					<tr>
 						<th scope="col" class="photo-heading">Foto</th>
 						<th scope="col">Bailarín</th>
+						<th scope="col">Género</th>
 						<th scope="col">Edad actual</th>
 						<th scope="col">Cumple 14 años</th>
 						<th scope="col">Ingreso a la agrupación</th>
@@ -50,7 +51,7 @@
 				</thead>
 				<tbody>
 					<tr *ngIf="cargandoCandidatos">
-						<td colspan="8" class="empty-state loading-cell">
+						<td colspan="9" class="empty-state loading-cell">
 							<p-progressSpinner ariaLabel="Cargando candidatos" [style]="{ width: '2.5rem', height: '2.5rem' }" strokeWidth="5"></p-progressSpinner>
 							<span>Cargando candidatos…</span>
 						</td>
@@ -64,6 +65,7 @@
 							<div class="dancer-name">{{ bailarin.apellidos }} {{ bailarin.nombres }}</div>
 							<small class="muted">{{ bailarin.cedula }}</small>
 						</td>
+						<td>{{ bailarin.genero || '—' }}</td>
 						<td>{{ edadActual(bailarin) ?? '—' }} años</td>
 						<td><span class="status-pill status-yes">{{ fechaCumple14(bailarin) }}</span></td>
 						<td>{{ formatearFecha(bailarin.inscripcion?.fecha_ingreso_agrupacion ?? bailarin.fecha_ingreso_agrupacion ?? null) || '—' }}</td>
@@ -76,7 +78,7 @@
 						</td>
 					</tr>
 					<tr *ngIf="!cargandoCandidatos && candidatos.length === 0">
-						<td colspan="8" class="empty-state">No hay bailarines infantiles próximos a pasar al elenco de planta.</td>
+						<td colspan="9" class="empty-state">No hay bailarines infantiles próximos a pasar al elenco de planta.</td>
 					</tr>
 				</tbody>
 			</table>
@@ -121,6 +123,7 @@
 					<tr>
 						<th scope="col" class="photo-heading">Foto</th>
 						<th scope="col">Bailarín</th>
+						<th scope="col">Género</th>
 						<th scope="col">Elenco</th>
 						<th scope="col">Estado</th>
 						<th scope="col">Cédula</th>
@@ -133,7 +136,7 @@
 				</thead>
 				<tbody>
 					<tr *ngIf="cargando">
-						<td colspan="10" class="empty-state loading-cell">
+						<td colspan="11" class="empty-state loading-cell">
 							<p-progressSpinner ariaLabel="Cargando bailarines" [style]="{ width: '2.5rem', height: '2.5rem' }" strokeWidth="5"></p-progressSpinner>
 							<span>Cargando bailarines…</span>
 						</td>
@@ -147,6 +150,7 @@
 							<div class="dancer-name">{{ bailarin.apellidos }} {{ bailarin.nombres }}</div>
 							<small class="muted">{{ bailarin.correo || 'Sin correo registrado' }}</small>
 						</td>
+						<td>{{ bailarin.genero || '—' }}</td>
 						<td>{{ etiquetaElenco(bailarin.elenco) }}</td>
 						<td>
 							<span *ngIf="estadoBailarin(bailarin) as estado" class="status-pill" [class.status-yes]="estado === 'ACTIVO'" [class.status-inactive]="estado === 'INACTIVO'">
@@ -172,7 +176,7 @@
 						</td>
 					</tr>
 					<tr *ngIf="!cargando && bailarinesFiltrados.length === 0">
-						<td colspan="10" class="empty-state">
+						<td colspan="11" class="empty-state">
 							{{ busqueda || filtroElenco !== 'TODOS' || filtroEstado !== 'ACTIVO' ? 'No hay bailarines que coincidan con los filtros.' : 'Todavía no hay bailarines activos registrados.' }}
 						</td>
 					</tr>
@@ -231,6 +235,7 @@
 			<h3>Datos personales</h3>
 			<div class="detail-grid">
 				<div><span>Cédula</span><strong>{{ detalle.cedula || '—' }}</strong></div>
+				<div><span>Género</span><strong>{{ detalle.genero || '—' }}</strong></div>
 				<div><span>Fecha de nacimiento</span><strong>{{ detalle.fecha_nacimiento || '—' }}</strong></div>
 				<div><span>Lugar de nacimiento</span><strong>{{ detalle.lugar_nacimiento || '—' }}</strong></div>
 				<div><span>Celular</span><strong>{{ detalle.celular || '—' }}</strong></div>

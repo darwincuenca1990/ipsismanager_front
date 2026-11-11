@@ -8,6 +8,14 @@
 			<label><span class="field-label">Cédula <span class="required-mark">*</span></span><input class="form-control" formControlName="cedula" [attr.maxlength]="limites.cedula" autocomplete="off"><small class="character-counter">{{ caracteresUsados('cedula') }}/{{ limites.cedula }}</small></label>
 			<label><span class="field-label">Apellidos <span class="required-mark">*</span></span><input class="form-control" formControlName="apellidos" [attr.maxlength]="limites.apellidos"><small class="character-counter">{{ caracteresUsados('apellidos') }}/{{ limites.apellidos }}</small></label>
 			<label class="form-field"> <span class="field-label">Nombres <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres" [attr.maxlength]="limites.nombres"><small class="character-counter">{{ caracteresUsados('nombres') }}/{{ limites.nombres }}</small></label>
+			<label class="form-field"><span class="field-label">Género <span class="required-mark">*</span></span>
+				<select class="form-select" formControlName="genero">
+					<option value="">Seleccione</option>
+					<option value="MASCULINO">Masculino</option>
+					<option value="FEMENINO">Femenino</option>
+				</select>
+				<small *ngIf="enviado && form.controls.genero.invalid" class="calendar-error">Seleccione un género válido.</small>
+			</label>
 			<label class="form-field"><span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control date-input" type="date" formControlName="fecha_nacimiento" [max]="fechaMaxima" (change)="actualizarElencoPorFecha()"><small *ngIf="enviado && form.controls.fecha_nacimiento.hasError('fechaNacimientoFutura')" class="calendar-error">La fecha de nacimiento no puede ser posterior a hoy.</small></label>
 			<label class="form-field"> <span class="field-label">Elenco <span class="required-mark">*</span></span>
 				<select class="form-select" formControlName="elenco">

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Bailarin, BailarinFormValue, GrupoFamiliar } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, Genero, GrupoFamiliar } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 
 @Component({
@@ -51,6 +51,7 @@ export class CrearBailarinesComponent implements OnChanges {
     cedula: ['', [Validators.required, Validators.maxLength(this.limites.cedula)]],
     apellidos: ['', [Validators.required, Validators.maxLength(this.limites.apellidos)]],
     nombres: ['', [Validators.required, Validators.maxLength(this.limites.nombres)]],
+    genero: ['' as Genero | '', Validators.required],
     fecha_nacimiento: ['', [
       Validators.required,
       (control: AbstractControl) => typeof control.value === 'string' && control.value > this.fechaMaxima
@@ -203,6 +204,7 @@ export class CrearBailarinesComponent implements OnChanges {
     const value = this.form.getRawValue();
     this.guardar.emit({
       ...value,
+      genero: value.genero as Genero,
       vive_con: value.vive_con as BailarinFormValue['vive_con'],
       grupo_familiar: value.grupo_familiar as GrupoFamiliar,
       fotografia: this.fotografia,
@@ -220,6 +222,7 @@ export class CrearBailarinesComponent implements OnChanges {
     if (!this.bailarin) {
       this.representanteSeleccionado = 'OTRO';
       this.form.reset({
+        genero: '',
         estudia: false,
         trabaja: false,
         padece_enfermedad: false,
@@ -244,6 +247,7 @@ export class CrearBailarinesComponent implements OnChanges {
 
     this.form.patchValue({
       ...this.bailarin,
+      genero: this.bailarin.genero ?? '',
       fecha_nacimiento: this.normalizarFecha(this.bailarin.fecha_nacimiento),
       elenco: this.bailarin.elenco ?? this.obtenerElencoPorEdad(this.bailarin.fecha_nacimiento?.slice(0, 10)) ?? '',
       fecha_autorizacion_publicacion: this.normalizarFecha(this.bailarin.fecha_autorizacion_publicacion) || this.fechaActual(),

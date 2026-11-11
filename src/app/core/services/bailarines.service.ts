@@ -28,6 +28,8 @@ export interface Inscripcion {
   fecha_salida: string | null;
 }
 
+export type Genero = 'MASCULINO' | 'FEMENINO';
+
 export interface Bailarin {
   id: number;
   pk?: number;
@@ -35,6 +37,7 @@ export interface Bailarin {
   cedula: string;
   apellidos: string;
   nombres: string;
+  genero: Genero | null;
   estudia: boolean;
   institucion_estudio: string;
   trabaja: boolean;
@@ -61,10 +64,11 @@ export interface Bailarin {
   fecha_salida?: string | null;
 }
 
-export interface BailarinFormValue extends Omit<Bailarin, 'id' | 'pk' | 'grupo_familiar' | 'fotografia' | 'inscripcion'> {
+export interface BailarinFormValue extends Omit<Bailarin, 'id' | 'pk' | 'grupo_familiar' | 'fotografia' | 'inscripcion' | 'genero'> {
   grupo_familiar: GrupoFamiliar;
   fotografia: File | null;
   inscripcion: Inscripcion;
+  genero: Genero;
 }
 
 export interface FiltrosBailarines {
@@ -173,4 +177,3 @@ export class BailarinesService {
     return typeof value === 'number' ? value : (value?.id ?? value?.pk ?? 0);
   }
 }
-
