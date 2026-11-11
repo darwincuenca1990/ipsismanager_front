@@ -182,6 +182,12 @@ export class MainLayoutComponent {
         routerLinkActiveOptions: { exact: true }
       },
       {
+        label: 'Presentaciones',
+        icon: 'pi pi-book',
+        routerLink: '/presentaciones',
+        routerLinkActiveOptions: { exact: true }
+      },
+      {
         label: 'Coreografías',
         icon: 'pi pi-video',
         routerLink: '/coreografias',

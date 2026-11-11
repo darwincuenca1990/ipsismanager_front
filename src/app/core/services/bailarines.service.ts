@@ -100,8 +100,9 @@ export class BailarinesService {
     );
   }
 
-  listar(filtros: FiltrosBailarines): Observable<any> {
-    const params = new HttpParams()
+  listar(filtros: FiltrosBailarines, enlace?: string): Observable<any> {
+    const consulta = enlace?.split('?')[1]?.split('#')[0] ?? '';
+    const params = new HttpParams({ fromString: consulta })
       .set('elenco', filtros.elenco)
       .set('estado', filtros.estado);
     const path = constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.BAILARINES.PATH;

@@ -32,7 +32,7 @@
 			</p>
 		</div>
 
-		<div *ngIf="errorCandidatos" class="alert alert-danger" role="alert">{{ errorCandidatos }}</div>
+		<div *ngIf="errorCandidatos" class="error-message" role="alert"><p-message severity="error" [text]="errorCandidatos"></p-message></div>
 
 		<div class="table-scroll">
 			<table class="table dancer-table align-middle mb-0">
@@ -92,13 +92,12 @@
 				<span class="total-count">{{ bailarinesFiltrados.length }} registros</span>
 			</div>
 			<div class="list-filters">
-				<label class="elenco-filter">
-					<span>Elenco</span>
-					<select class="form-select" [(ngModel)]="filtroElenco" (ngModelChange)="cambiarFiltros()" aria-label="Filtrar por elenco">
-						<option value="TODOS">Todos los elencos</option>
-						<option *ngFor="let opcion of opcionesElenco" [value]="opcion.value">{{ opcion.label }}</option>
-					</select>
-				</label>
+				<div class="elenco-filter">
+					<label for="filtro-elenco">Elenco</label>
+					<p-dropdown inputId="filtro-elenco" ariaLabel="Filtrar por elenco" [(ngModel)]="filtroElenco"
+						(ngModelChange)="cambiarFiltros()" [options]="opcionesFiltroElenco" optionLabel="label" optionValue="value"
+						[autoDisplayFirst]="false" appendTo="body" [style]="{width: '100%'}"></p-dropdown>
+				</div>
 				<fieldset class="state-filter">
 					<legend>Estado</legend>
 					<div class="btn-group state-toggle" role="group" aria-label="Filtrar por estado">
@@ -115,7 +114,7 @@
 			</div>
 		</div>
 
-		<div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
+		<div *ngIf="error" class="error-message" role="alert"><p-message severity="error" [text]="error"></p-message></div>
 
 		<div class="table-scroll">
 			<table class="table dancer-table align-middle mb-0">
@@ -195,10 +194,10 @@
 			</div>
 			<button type="button" class="close-modal" (click)="cerrarFormulario()" aria-label="Cerrar formulario">&times;</button>
 		</header>
-		<div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
 		<app-crear-bailarines
 			[bailarin]="bailarinSeleccionado"
 			[guardando]="guardando"
+			[errorServidor]="errorFormulario"
 			(guardar)="guardar($event)"
 			(cancelar)="cerrarFormulario()">
 		</app-crear-bailarines>

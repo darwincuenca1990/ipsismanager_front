@@ -1,0 +1,37 @@
+.presentations-page { max-width: 1440px; margin: auto; padding: clamp(1rem, 3vw, 2rem); color: #172b4d; }
+.page-heading, .modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.page-heading { margin-bottom: 1.5rem; }
+.page-heading h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 750; }
+.eyebrow { margin: 0 0 .25rem; color: #64748b; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+.subtitle { margin: .35rem 0 0; color: #64748b; }
+.card-panel { padding: 1.25rem; border: 1px solid #e5eaf2; border-radius: 1rem; background: #fff; }
+h2 { font-size: 1.2rem; }
+h3 { margin: 1rem 0; font-size: 1.05rem; font-weight: 700; }
+.filters { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin: 1rem 0; }
+.filters label { flex: 1; min-width: 120px; }
+.table-scroll { overflow-x: auto; }
+table { min-width: 700px; }
+th { color: #64748b; background: #f8fafc; font-size: .75rem; text-transform: uppercase; }
+.empty-state { padding: 2rem; text-align: center; color: #718096; }
+.pagination-controls, .form-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
+.modal-backdrop-custom { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 1rem; background: rgb(15 23 42 / 55%); }
+.form-modal { width: min(100%, 1100px); max-height: 92vh; overflow-y: auto; padding: 1.5rem; border-radius: 1rem; background: #f8fafc; }
+.modal-heading { margin-bottom: 1rem; }
+.close-modal { width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%; color: #475569; background: #e9eef5; font-size: 1.5rem; }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.form-grid label { display: grid; gap: .35rem; }
+.form-grid .check-option, .check-option { display: inline-flex; align-items: center; gap: .4rem; margin-right: 1rem; }
+.select-field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.select-field label { display: block; }
+.select-field p-dropdown, .select-field p-multiselect { display: block; width: 100%; }
+.field-hint { display: block; margin-top: .35rem; color: #64748b; }
+.net-cost { background: #edf2f7; }
+.assignment-section { margin-top: 1.5rem; }
+.assignment-section p { color: #64748b; font-size: .9rem; }
+.assignment-table th, .assignment-table td { min-width: 130px; }
+.assignment-table th:first-child { min-width: 280px; }
+@media (max-width: 700px) {
+  .page-heading { align-items: stretch; flex-direction: column; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-modal { padding: 1rem; }
+}

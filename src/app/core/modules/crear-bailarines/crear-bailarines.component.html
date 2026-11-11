@@ -1,6 +1,9 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dancer-form">
-	<div *ngIf="enviado && form.invalid" class="alert alert-warning" role="alert">
-		Completa los campos obligatorios marcados con * y revisa el correo electrónico.
+	<div *ngIf="errorServidor || (enviado && form.invalid)" class="form-errors" role="alert" aria-live="assertive">
+		<p-message *ngIf="errorServidor" severity="error" [text]="errorServidor"></p-message>
+		<ng-container *ngIf="enviado">
+			<p-message *ngFor="let error of erroresValidacion" severity="error" [text]="error"></p-message>
+		</ng-container>
 	</div>
 	<section class="form-section">
 		<h3>Datos del bailarín</h3>
@@ -8,33 +11,26 @@
 			<label><span class="field-label">Cédula <span class="required-mark">*</span></span><input class="form-control" formControlName="cedula" [attr.maxlength]="limites.cedula" autocomplete="off"><small class="character-counter">{{ caracteresUsados('cedula') }}/{{ limites.cedula }}</small></label>
 			<label><span class="field-label">Apellidos <span class="required-mark">*</span></span><input class="form-control" formControlName="apellidos" [attr.maxlength]="limites.apellidos"><small class="character-counter">{{ caracteresUsados('apellidos') }}/{{ limites.apellidos }}</small></label>
 			<label class="form-field"> <span class="field-label">Nombres <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres" [attr.maxlength]="limites.nombres"><small class="character-counter">{{ caracteresUsados('nombres') }}/{{ limites.nombres }}</small></label>
-			<label class="form-field"><span class="field-label">Género <span class="required-mark">*</span></span>
-				<select class="form-select" formControlName="genero">
-					<option value="">Seleccione</option>
-					<option value="MASCULINO">Masculino</option>
-					<option value="FEMENINO">Femenino</option>
-				</select>
-				<small *ngIf="enviado && form.controls.genero.invalid" class="calendar-error">Seleccione un género válido.</small>
-			</label>
-			<label class="form-field"><span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control date-input" type="date" formControlName="fecha_nacimiento" [max]="fechaMaxima" (change)="actualizarElencoPorFecha()"><small *ngIf="enviado && form.controls.fecha_nacimiento.hasError('fechaNacimientoFutura')" class="calendar-error">La fecha de nacimiento no puede ser posterior a hoy.</small></label>
-			<label class="form-field"> <span class="field-label">Elenco <span class="required-mark">*</span></span>
-				<select class="form-select" formControlName="elenco">
-					<option value="">Seleccione un elenco</option>
-					<option *ngFor="let opcion of opcionesElenco" [value]="opcion.value">{{ opcion.label }}</option>
-				</select>
+			<div class="form-field">
+				<label for="bailarin-genero"><span class="field-label">Género <span class="required-mark">*</span></span></label>
+				<p-dropdown inputId="bailarin-genero" formControlName="genero" [options]="opcionesGenero" optionLabel="label" optionValue="value"
+					placeholder="Seleccione" [autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+			</div>
+			<label class="form-field"><span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control date-input" type="date" formControlName="fecha_nacimiento" [max]="fechaMaxima" (change)="actualizarElencoPorFecha()"></label>
+			<div class="form-field">
+				<label for="bailarin-elenco"><span class="field-label">Elenco <span class="required-mark">*</span></span></label>
+				<p-dropdown inputId="bailarin-elenco" formControlName="elenco" [options]="opcionesElenco" optionLabel="label" optionValue="value"
+					placeholder="Seleccione un elenco" [autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
 				<small class="field-hint">Se asigna automáticamente por edad: 5–13 Infantil, 14–27 Planta y mayores de 27 Máster. Puedes cambiarlo.</small>
-			</label>
+			</div>
 			<label>Lugar de nacimiento<input class="form-control" formControlName="lugar_nacimiento" [attr.maxlength]="limites.lugar_nacimiento"><small class="character-counter">{{ caracteresUsados('lugar_nacimiento') }}/{{ limites.lugar_nacimiento }}</small></label>
 			<label>Celular<input class="form-control" type="tel" inputmode="numeric" formControlName="celular" [attr.maxlength]="limites.celular" (input)="filtrarSoloNumeros($event)"><small class="character-counter" [class.character-counter-error]="form.controls.celular.invalid">{{ caracteresUsados('celular') }}/{{ limites.celular }} · solo números</small></label>
-			<label class="form-field">Correo electrónico<input class="form-control" type="email" formControlName="correo" [attr.maxlength]="limites.correo"><small class="character-counter" [class.character-counter-error]="form.controls.correo.invalid">{{ caracteresUsados('correo') }}/{{ limites.correo }}<ng-container *ngIf="form.controls.correo.invalid"> · formato inválido</ng-container></small></label>
-			<label class="form-field">Convive con
-				<select class="form-select" formControlName="vive_con">
-					<option value="">Seleccione</option>
-					<option value="PADRES">Padres</option>
-					<option value="FAMILIARES">Familiares</option>
-					<option value="OTROS">Otros</option>
-				</select>
-			</label>
+			<label class="form-field">Correo electrónico<input class="form-control" type="email" formControlName="correo" [attr.maxlength]="limites.correo"><small class="character-counter" [class.character-counter-error]="form.controls.correo.invalid">{{ caracteresUsados('correo') }}/{{ limites.correo }}</small></label>
+			<div class="form-field">
+				<label for="bailarin-convivencia">Convive con</label>
+				<p-dropdown inputId="bailarin-convivencia" formControlName="vive_con" [options]="opcionesConvivencia" optionLabel="label" optionValue="value"
+					placeholder="Seleccione" [autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+			</div>
 			<label class="wide">Dirección domiciliaria<input class="form-control" formControlName="direccion_domicilio" [attr.maxlength]="limites.direccion_domicilio"><small class="character-counter">{{ caracteresUsados('direccion_domicilio') }}/{{ limites.direccion_domicilio }}</small></label>
 			<label class="wide">Referencia domiciliaria<input class="form-control" formControlName="referencia_domicilio" [attr.maxlength]="limites.referencia_domicilio"><small class="character-counter">{{ caracteresUsados('referencia_domicilio') }}/{{ limites.referencia_domicilio }}</small></label>
 			<label class="wide">Fotografía<input class="form-control" type="file" accept="image/*" (change)="onFileChange($event)"></label>
@@ -60,19 +56,16 @@
 			<label class="form-field">
 				<span class="field-label">Fecha de ingreso a la agrupación <span class="required-mark">*</span></span>
 				<input class="form-control date-input" type="date" formControlName="fecha_ingreso_agrupacion" [min]="fechaMinimaIngreso" [max]="fechaMaxima">
-				<small *ngIf="enviado && form.controls.inscripcion.controls.fecha_ingreso_agrupacion.hasError('fechaIngresoMinima')" class="calendar-error">La fecha no puede ser anterior al 13/05/2013.</small>
 			</label>
 			<div class="tenure-highlight" role="status" aria-live="polite">
 				<i class="pi pi-clock" aria-hidden="true"></i>
 				<div><span>Tiempo en la agrupación</span><strong>{{ antiguedadAgrupacion }}</strong></div>
 			</div>
-			<label class="form-field">
-				<span class="field-label">Estado <span class="required-mark">*</span></span>
-				<select class="form-select" formControlName="estado">
-					<option value="ACTIVO">Activo</option>
-					<option value="INACTIVO">Inactivo</option>
-				</select>
-			</label>
+			<div class="form-field">
+				<label for="bailarin-estado"><span class="field-label">Estado <span class="required-mark">*</span></span></label>
+				<p-dropdown inputId="bailarin-estado" formControlName="estado" [options]="opcionesEstado" optionLabel="label" optionValue="value"
+					[autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+			</div>
 			<label class="wide">Motivo de ingreso
 				<textarea class="form-control" formControlName="motivo_ingreso_agrupacion" rows="3"></textarea>
 			</label>
@@ -91,13 +84,12 @@
 			<label>Nombres de la madre<input class="form-control" formControlName="nombres_mama" [attr.maxlength]="limites.nombres_mama" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('nombres_mama') }}/{{ limites.nombres_mama }}</small></label>
 			<label>Celular de la madre<input class="form-control" type="tel" inputmode="numeric" formControlName="celular_mama" [attr.maxlength]="limites.celular_mama" (input)="filtrarCelularFamiliar($event, 'celular_mama')"><small class="character-counter" [class.character-counter-error]="form.controls.grupo_familiar.controls.celular_mama.invalid">{{ caracteresGrupoUsados('celular_mama') }}/{{ limites.celular_mama }} · solo números</small></label>
 			<label>Trabajo de la madre<input class="form-control" formControlName="lugar_trabajo_mama" [attr.maxlength]="limites.lugar_trabajo_mama" (input)="actualizarRepresentanteDesdePadres()"><small class="character-counter">{{ caracteresGrupoUsados('lugar_trabajo_mama') }}/{{ limites.lugar_trabajo_mama }}</small></label>
-			<label class="wide">¿Quién será el representante?
-				<select class="form-select" [value]="representanteSeleccionado" (change)="seleccionarRepresentante($any($event.target).value)">
-					<option value="OTRO">Otra persona</option>
-					<option value="PAPA" [disabled]="!(form.get('grupo_familiar.apellidos_papa')?.value || form.get('grupo_familiar.nombres_papa')?.value)">Padre</option>
-					<option value="MAMA" [disabled]="!(form.get('grupo_familiar.apellidos_mama')?.value || form.get('grupo_familiar.nombres_mama')?.value)">Madre</option>
-				</select>
-			</label>
+			<div class="wide form-field">
+				<label for="bailarin-representante">¿Quién será el representante?</label>
+				<p-dropdown inputId="bailarin-representante" [options]="opcionesRepresentante" optionLabel="label" optionValue="value" optionDisabled="disabled"
+					[ngModel]="representanteSeleccionado" [ngModelOptions]="{standalone: true}" (ngModelChange)="seleccionarRepresentante($event)"
+					appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+			</div>
 			<label><span class="field-label">Representante <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres_completos_representante" maxlength="200" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
 			<label><span class="field-label">Celular del representante <span class="required-mark">*</span></span><input class="form-control" formControlName="celular_representante" maxlength="20" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
 			<label><span class="field-label">Parentesco <span class="required-mark">*</span></span><input class="form-control" formControlName="parentesco" maxlength="100" [readonly]="representanteSeleccionado !== 'OTRO'"></label>

@@ -1,1 +1,120 @@
-<p>presentaciones works!</p>
+<main class="presentations-page">
+  <header class="page-heading">
+    <div><p class="eyebrow">Administración</p><h1>Presentaciones</h1><p class="subtitle">Organiza elencos, bailarines y coreografías.</p></div>
+    <button type="button" class="btn btn-primary" (click)="nuevo()" [disabled]="cargandoCatalogos || !!errorCatalogos"><i class="pi pi-plus" aria-hidden="true"></i> Nueva presentación</button>
+  </header>
+
+  <div *ngIf="cargandoCatalogos" class="alert alert-info" role="status">Cargando bailarines y coreografías…</div>
+  <div *ngIf="errorCatalogos" class="alert alert-danger" role="alert">
+    {{ errorCatalogos }} <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarCatalogos()">Reintentar</button>
+  </div>
+  <div *ngIf="mensajeExito" class="alert alert-success" role="status">{{ mensajeExito }}</div>
+
+  <section class="card-panel">
+    <h2>Listado de presentaciones</h2>
+    <form class="filters" (ngSubmit)="aplicarFiltros()">
+      <label>Mes<input type="number" class="form-control" name="mes" [(ngModel)]="filtros.mes" min="1" max="12" placeholder="Todos"></label>
+      <label>Año<input type="number" class="form-control" name="anio" [(ngModel)]="filtros.anio" min="1" max="9999" placeholder="Todos"></label>
+      <label>Lugar<input class="form-control" name="lugar" [(ngModel)]="filtros.lugar" placeholder="Buscar lugar"></label>
+      <button type="submit" class="btn btn-outline-primary" [disabled]="cargando">Filtrar</button>
+    </form>
+    <div *ngIf="errorListado" class="alert alert-danger" role="alert">{{ errorListado }}</div>
+    <div class="table-scroll">
+      <table class="table align-middle">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Responsable</th><th>Tipo</th><th>Elencos</th><th>Neto</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngIf="cargando"><td colspan="8" class="empty-state">Cargando presentaciones…</td></tr>
+          <ng-container *ngIf="!cargando">
+            <tr *ngFor="let presentacion of presentaciones">
+              <td>{{ presentacion.fecha }}</td><td>{{ presentacion.hora_presentacion }}</td><td>{{ presentacion.lugar }}</td>
+              <td>{{ nombreBailarin(presentacion.persona_cargo) }}</td><td>{{ presentacion.tipo_presentacion }}</td>
+              <td>{{ presentacion.elencos.join(', ') }}</td><td>{{ presentacion.costo_neto }}</td>
+              <td><button type="button" class="btn btn-sm btn-outline-primary" (click)="editar(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos">Editar</button></td>
+            </tr>
+            <tr *ngIf="!presentaciones.length && !errorListado"><td colspan="8" class="empty-state">No hay presentaciones para mostrar.</td></tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+    <nav *ngIf="anterior || siguiente" class="pagination-controls" aria-label="Paginación de presentaciones">
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="!anterior || cargando" (click)="cargar(anterior || undefined)">Anterior</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="!siguiente || cargando" (click)="cargar(siguiente || undefined)">Siguiente</button>
+    </nav>
+  </section>
+</main>
+
+<div *ngIf="mostrandoFormulario" class="modal-backdrop-custom">
+  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="presentacion-titulo">
+    <header class="modal-heading">
+      <h2 id="presentacion-titulo">{{ seleccionada ? 'Editar presentación' : 'Nueva presentación' }}</h2>
+      <button type="button" class="close-modal" [disabled]="guardando" (click)="mostrandoFormulario = false" aria-label="Cerrar formulario">&times;</button>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+      <div *ngIf="enviado && form.invalid" class="alert alert-warning" role="alert">Complete los campos obligatorios y revise los importes.</div>
+      <h3>Datos de la presentación</h3>
+      <div class="form-grid">
+        <label>Fecha *<input type="date" class="form-control" formControlName="fecha" required></label>
+        <label>Hora de presentación *<input type="time" class="form-control" formControlName="hora_presentacion" required></label>
+        <label>Lugar *<input class="form-control" maxlength="250" formControlName="lugar" required></label>
+        <div class="select-field">
+          <label for="persona-cargo">Persona a cargo *</label>
+          <p-dropdown id="selector-persona-cargo" inputId="persona-cargo" formControlName="persona_cargo"
+            [options]="opcionesPersonaCargo" optionLabel="label" optionValue="value" [autoDisplayFirst]="false"
+            placeholder="Seleccione" emptyMessage="No hay bailarines disponibles." appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+        </div>
+        <label>Costo total *<input type="text" inputmode="decimal" class="form-control" formControlName="costo_total_presentacion" maxlength="13" placeholder="0.00" required></label>
+        <label>Costo de transporte *<input type="text" inputmode="decimal" class="form-control" formControlName="costo_transporte" maxlength="13" placeholder="0.00" required></label>
+        <label>Costo neto<output class="form-control net-cost">{{ costoNeto }}</output></label>
+        <label>Nombre del transporte *<input class="form-control" maxlength="200" formControlName="nombre_transporte" required></label>
+        <div class="select-field">
+          <label for="tipo-presentacion">Tipo de presentación *</label>
+          <p-dropdown id="selector-tipo-presentacion" inputId="tipo-presentacion" formControlName="tipo_presentacion"
+            [options]="opcionesTipoPresentacion" optionLabel="label" optionValue="value" (onChange)="cambiarTipo()"
+            appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+        </div>
+        <div class="select-field" *ngIf="form.controls.tipo_presentacion.value === 'UN ELENCO'">
+          <label for="elenco-unico">Elenco *</label>
+          <p-dropdown id="selector-elenco-unico" inputId="elenco-unico" [options]="opcionesElenco" optionLabel="label" optionValue="value"
+            [ngModel]="elencos[0] || null" [ngModelOptions]="{standalone: true}" (ngModelChange)="seleccionarUnElenco($event)"
+            placeholder="Seleccione un elenco" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+        </div>
+        <div class="select-field" *ngIf="form.controls.tipo_presentacion.value === 'FESTIVALIPSIS'">
+          <label for="elencos-multiples">Elencos *</label>
+          <p-multiSelect id="selector-elencos" inputId="elencos-multiples" [options]="opcionesElenco" optionLabel="label" optionValue="value"
+            [ngModel]="elencos" [ngModelOptions]="{standalone: true}" (ngModelChange)="elencos = $event || []"
+            placeholder="Seleccione los elencos" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-multiSelect>
+        </div>
+        <div class="select-field">
+          <label for="coreografias-multiples">Coreografías</label>
+          <p-multiSelect id="selector-coreografias" inputId="coreografias-multiples" [options]="coreografias" optionLabel="nombre" optionValue="id"
+            [ngModel]="idsCoreografiasSeleccionadas" [ngModelOptions]="{standalone: true}" (ngModelChange)="actualizarCoreografias($event)"
+            placeholder="Seleccione las coreografías" emptyMessage="No hay coreografías registradas." appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}">
+            <ng-template let-coreografia pTemplate="item">{{ coreografia.nombre }} · {{ coreografia.region }}</ng-template>
+          </p-multiSelect>
+          <small class="field-hint">Cada coreografía debe tener al menos un bailarín para guardarse.</small>
+        </div>
+      </div>
+
+      <section class="assignment-section">
+        <h3>Bailarines y coreografías</h3>
+        <p>Selecciona a los bailarines y marca las coreografías que realiza cada uno. Se muestran primero mujeres, luego hombres y finalmente registros sin género.</p>
+        <div *ngIf="hayAsignacionesFueraDelElenco" class="alert alert-warning" role="alert">Hay bailarines seleccionados fuera de los elencos elegidos. Desmárcalos antes de guardar.</div>
+        <div class="table-scroll">
+          <table class="table assignment-table align-middle">
+            <thead><tr><th>Bailarín</th><th>Elenco</th><th *ngFor="let coreografia of coreografiasVisibles">{{ coreografia.nombre }}</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let bailarin of bailarinesVisibles">
+                <td><label class="check-option"><input type="checkbox" [checked]="asignaciones.has(bailarin.id)" (change)="seleccionarBailarin(bailarin.id, $any($event.target).checked)"> {{ bailarin.apellidos }} {{ bailarin.nombres }} ({{ bailarin.genero || 'SIN GÉNERO' }}){{ activos.has(bailarin.id) ? '' : ' · Inactivo' }}</label></td>
+                <td>{{ bailarin.elenco }}</td>
+                <td *ngFor="let coreografia of coreografiasVisibles"><input type="checkbox" [attr.aria-label]="coreografia.nombre + ' para ' + bailarin.nombres + ' ' + bailarin.apellidos" [disabled]="!asignaciones.has(bailarin.id)" [checked]="asignaciones.get(bailarin.id)?.has(coreografia.id) || false" (change)="asignarCoreografia(bailarin.id, coreografia.id, $any($event.target).checked)"></td>
+              </tr>
+              <tr *ngIf="!bailarinesVisibles.length"><td [attr.colspan]="2 + coreografiasVisibles.length" class="empty-state">Seleccione un elenco para mostrar bailarines activos.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <div class="form-actions"><button type="button" class="btn btn-outline-secondary" [disabled]="guardando" (click)="mostrandoFormulario = false">Cancelar</button><button type="submit" class="btn btn-primary" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar presentación' }}</button></div>
+    </form>
+  </section>
+</div>

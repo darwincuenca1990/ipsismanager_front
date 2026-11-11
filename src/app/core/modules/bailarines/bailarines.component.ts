@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DropdownModule } from 'primeng/dropdown';
+import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -12,7 +14,7 @@ import { CrearBailarinesComponent } from '../crear-bailarines/crear-bailarines.c
 @Component({
   selector: 'app-bailarines',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent],
+  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent, MessageModule, DropdownModule],
   templateUrl: './bailarines.component.html',
   styleUrl: './bailarines.component.css'
 })
@@ -26,6 +28,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   guardando = false;
   mostrarFormulario = false;
   error = '';
+  errorFormulario = '';
   bailarinSeleccionado: Bailarin | null = null;
   bailarinDetalle: Bailarin | null = null;
   vista: 'listado' | 'candidatos' = 'listado';
@@ -33,13 +36,16 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   fechaLimiteCandidatos: string | null = null;
   cargandoCandidatos = false;
   errorCandidatos = '';
+  readonly opcionesFiltroElenco: { value: Elenco | 'TODOS'; label: string }[];
   private solicitudesFoto: Subscription[] = [];
 
   constructor(
     private readonly bailarinesService: BailarinesService,
     private readonly commonsService: CommonsService,
     private readonly route: ActivatedRoute
-  ) {}
+  ) {
+    this.opcionesFiltroElenco = [{ value: 'TODOS', label: 'Todos los elencos' }, ...this.commonsService.opcionesElenco];
+  }
 
   get opcionesElenco(): { value: Elenco; label: string }[] {
     return this.commonsService.opcionesElenco;
@@ -151,11 +157,13 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   }
 
   nuevo(): void {
+    this.errorFormulario = '';
     this.bailarinSeleccionado = null;
     this.mostrarFormulario = true;
   }
 
   editar(bailarin: Bailarin): void {
+    this.errorFormulario = '';
     const grupo = bailarin.grupo_familiar;
     const groupId = typeof grupo === 'number' ? grupo : (grupo.id ?? grupo.pk ?? 0);
     const groupIsComplete = typeof grupo === 'object' && !!grupo.nombres_completos_representante;
@@ -187,7 +195,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
 
   guardar(value: BailarinFormValue): void {
     this.guardando = true;
-    this.error = '';
+    this.errorFormulario = '';
     const bailarinSeleccionado = this.bailarinSeleccionado;
     const esActualizacion = !!bailarinSeleccionado;
     const request = bailarinSeleccionado
@@ -210,7 +218,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.guardando = false;
-        this.error = this.mensajeError(err, 'No se pudo guardar el bailarín.');
+        this.errorFormulario = this.mensajeError(err, 'No se pudo guardar el bailarín.');
       }
     });
   }

@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DropdownModule } from 'primeng/dropdown';
+import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Bailarin, BailarinFormValue, Genero, GrupoFamiliar } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
@@ -8,13 +10,14 @@ import { CommonsService, Elenco } from '../../services/commons.service';
 @Component({
   selector: 'app-crear-bailarines',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ProgressSpinnerModule, DropdownModule, MessageModule],
   templateUrl: './crear-bailarines.component.html',
   styleUrl: './crear-bailarines.component.css'
 })
 export class CrearBailarinesComponent implements OnChanges {
   @Input() bailarin: Bailarin | null = null;
   @Input() guardando = false;
+  @Input() errorServidor = '';
   @Output() guardar = new EventEmitter<BailarinFormValue>();
   @Output() cancelar = new EventEmitter<void>();
 
@@ -24,6 +27,22 @@ export class CrearBailarinesComponent implements OnChanges {
   representanteSeleccionado: 'PAPA' | 'MAMA' | 'OTRO' = 'OTRO';
   readonly fechaMinimaIngreso = '2013-05-13';
   readonly fechaMaxima = this.fechaActual();
+  readonly opcionesGenero: { label: string; value: Genero }[] = [
+    { label: 'Masculino', value: 'MASCULINO' },
+    { label: 'Femenino', value: 'FEMENINO' }
+  ];
+  readonly opcionesConvivencia = [
+    { label: 'Seleccione', value: '' },
+    { label: 'Padres', value: 'PADRES' },
+    { label: 'Familiares', value: 'FAMILIARES' },
+    { label: 'Otros', value: 'OTROS' }
+  ];
+  readonly opcionesEstado = [
+    { label: 'Activo', value: 'ACTIVO' },
+    { label: 'Inactivo', value: 'INACTIVO' }
+  ];
+  private opcionesRepresentanteCache: { label: string; value: string; disabled: boolean }[] = [];
+  private disponibilidadRepresentante = '';
 
   readonly limites = {
     cedula: 15,
@@ -102,17 +121,70 @@ export class CrearBailarinesComponent implements OnChanges {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly commonsService: CommonsService
+    private readonly commonsService: CommonsService,
+    private readonly elemento: ElementRef<HTMLElement>
   ) {}
 
   get opcionesElenco(): { value: Elenco; label: string }[] {
     return this.commonsService.opcionesElenco;
   }
 
+  get opcionesRepresentante(): { label: string; value: string; disabled: boolean }[] {
+    const grupo = this.form.controls.grupo_familiar.controls;
+    const padreDisponible = !!(grupo.apellidos_papa.value || grupo.nombres_papa.value);
+    const madreDisponible = !!(grupo.apellidos_mama.value || grupo.nombres_mama.value);
+    const disponibilidad = `${padreDisponible}-${madreDisponible}`;
+    if (disponibilidad !== this.disponibilidadRepresentante) {
+      this.disponibilidadRepresentante = disponibilidad;
+      this.opcionesRepresentanteCache = [
+        { label: 'Otra persona', value: 'OTRO', disabled: false },
+        { label: 'Padre', value: 'PAPA', disabled: !padreDisponible },
+        { label: 'Madre', value: 'MAMA', disabled: !madreDisponible }
+      ];
+    }
+    return this.opcionesRepresentanteCache;
+  }
+
   get antiguedadAgrupacion(): string {
     return this.commonsService.calcularAntiguedad(
       this.form.controls.inscripcion.controls.fecha_ingreso_agrupacion.value
     );
+  }
+
+  get erroresValidacion(): string[] {
+    const campos: { path: string; label: string }[] = [
+      { path: 'cedula', label: 'Cédula' }, { path: 'apellidos', label: 'Apellidos' },
+      { path: 'nombres', label: 'Nombres' }, { path: 'genero', label: 'Género' },
+      { path: 'fecha_nacimiento', label: 'Fecha de nacimiento' }, { path: 'elenco', label: 'Elenco' },
+      { path: 'lugar_nacimiento', label: 'Lugar de nacimiento' }, { path: 'celular', label: 'Celular' },
+      { path: 'correo', label: 'Correo electrónico' }, { path: 'institucion_estudio', label: 'Institución educativa' },
+      { path: 'lugar_trabajo', label: 'Lugar de trabajo' }, { path: 'direccion_domicilio', label: 'Dirección domiciliaria' },
+      { path: 'referencia_domicilio', label: 'Referencia domiciliaria' }, { path: 'detalle_enfermedad', label: 'Detalle de enfermedad' },
+      { path: 'inscripcion.fecha_ingreso_agrupacion', label: 'Fecha de ingreso a la agrupación' },
+      { path: 'inscripcion.estado', label: 'Estado' },
+      { path: 'grupo_familiar.apellidos_papa', label: 'Apellidos del padre' },
+      { path: 'grupo_familiar.nombres_papa', label: 'Nombres del padre' },
+      { path: 'grupo_familiar.celular_papa', label: 'Celular del padre' },
+      { path: 'grupo_familiar.lugar_trabajo_papa', label: 'Trabajo del padre' },
+      { path: 'grupo_familiar.apellidos_mama', label: 'Apellidos de la madre' },
+      { path: 'grupo_familiar.nombres_mama', label: 'Nombres de la madre' },
+      { path: 'grupo_familiar.celular_mama', label: 'Celular de la madre' },
+      { path: 'grupo_familiar.lugar_trabajo_mama', label: 'Trabajo de la madre' },
+      { path: 'grupo_familiar.nombres_completos_representante', label: 'Representante' },
+      { path: 'grupo_familiar.celular_representante', label: 'Celular del representante' },
+      { path: 'grupo_familiar.parentesco', label: 'Parentesco' }
+    ];
+    return campos.flatMap(({ path, label }) => {
+      const control = this.form.get(path);
+      if (!control?.errors) return [];
+      if (control.hasError('required')) return [`${label}: campo obligatorio.`];
+      if (control.hasError('fechaNacimientoFutura')) return [`${label}: no puede ser posterior a hoy.`];
+      if (control.hasError('fechaIngresoMinima')) return [`${label}: no puede ser anterior al 13/05/2013.`];
+      if (control.hasError('email')) return [`${label}: formato de correo inválido.`];
+      if (control.hasError('pattern')) return [`${label}: solo se permiten números.`];
+      if (control.hasError('maxlength')) return [`${label}: supera la longitud permitida.`];
+      return [`${label}: valor inválido.`];
+    });
   }
 
   caracteresUsados(controlPath: string): number {
@@ -150,6 +222,7 @@ export class CrearBailarinesComponent implements OnChanges {
     if (changes['bailarin']) {
       this.cargarBailarin();
     }
+    if (changes['errorServidor'] && this.errorServidor) this.mostrarErrores();
   }
 
   onFileChange(event: Event): void {
@@ -199,7 +272,10 @@ export class CrearBailarinesComponent implements OnChanges {
   onSubmit(): void {
     this.enviado = true;
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.mostrarErrores();
+      return;
+    }
 
     const value = this.form.getRawValue();
     this.guardar.emit({
@@ -213,6 +289,10 @@ export class CrearBailarinesComponent implements OnChanges {
         fecha_salida: value.inscripcion.fecha_salida || null
       }
     } as BailarinFormValue);
+  }
+
+  private mostrarErrores(): void {
+    this.elemento.nativeElement.closest('.form-modal')?.scrollTo({ top: 0 });
   }
 
   private cargarBailarin(): void {
