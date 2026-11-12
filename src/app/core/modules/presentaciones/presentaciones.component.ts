@@ -2,16 +2,20 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DropdownModule } from 'primeng/dropdown';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
-import { forkJoin, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { Bailarin, BailarinesService } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 import { Coreografia, CoreografiasService } from '../../services/coreografias.service';
 import { obtenerTodasLasPaginas } from '../../services/paginas-api';
 import { Presentacion, PresentacionDatos, PresentacionesService, TipoPresentacion } from '../../services/presentaciones.service';
 import { SHARED_IMPORTS } from '../../../shared/shared-imports';
+import { agruparPorElenco } from './agrupar-por-elenco';
+import { DetallePresentacionComponent } from './detalle-presentacion.component';
+import { cargarCatalogosPresentacion, combinarBailarines } from './catalogos-presentacion';
 
 function textoRequerido(control: AbstractControl): ValidationErrors | null {
   return typeof control.value === 'string' && control.value.trim() ? null : { required: true };
@@ -20,7 +24,7 @@ function textoRequerido(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-presentaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DropdownModule, MultiSelectModule, PaginatorModule, SHARED_IMPORTS],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DropdownModule, MultiSelectModule, PaginatorModule, SHARED_IMPORTS, DetallePresentacionComponent],
   templateUrl: './presentaciones.component.html',
   styleUrl: './presentaciones.component.css'
 })
@@ -38,6 +42,9 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   mostrandoFormulario = false;
   cargando = false;
   cargandoCatalogos = false;
+  cargandoDetalle = false;
+  errorDetalle = '';
+  desdeComparativas = false;
   guardando = false;
   enviado = false;
   errorListado = '';
@@ -57,6 +64,8 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   primeraFila = 0;
   readonly filasPorPagina = 10;
   private solicitudListado?: Subscription;
+  private solicitudDetalle?: Subscription;
+  private suscripcionRuta?: Subscription;
   readonly opcionesElenco = this.commons.opcionesElenco.filter(opcion =>
     opcion.value === 'INFANTIL' || opcion.value === 'PLANTA' || opcion.value === 'MÁSTER'
   );
@@ -81,16 +90,40 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     private readonly commons: CommonsService,
     private readonly service: PresentacionesService,
     private readonly bailarinesService: BailarinesService,
-    private readonly coreografiasService: CoreografiasService
+    private readonly coreografiasService: CoreografiasService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
     this.cargar();
     this.cargarCatalogos();
+    this.suscripcionRuta = this.route.queryParamMap.subscribe(params => {
+      this.desdeComparativas = params.get('origen') === 'comparativas';
+      const valor = params.get('detalle');
+      if (!valor) {
+        this.solicitudDetalle?.unsubscribe();
+        this.cargandoDetalle = false;
+        this.detalle = null;
+        this.errorDetalle = '';
+        return;
+      }
+      const id = Number(valor);
+      if (!/^[1-9]\d*$/.test(valor) || !Number.isSafeInteger(id)) {
+        this.solicitudDetalle?.unsubscribe();
+        this.cargandoDetalle = false;
+        this.errorDetalle = 'El identificador de la presentación no es válido.';
+        this.detalle = null;
+        return;
+      }
+      this.ver(id);
+    });
   }
 
   ngOnDestroy(): void {
     this.solicitudListado?.unsubscribe();
+    this.solicitudDetalle?.unsubscribe();
+    this.suscripcionRuta?.unsubscribe();
   }
 
   get presentacionesFiltradas(): Presentacion[] {
@@ -145,18 +178,10 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   cargarCatalogos(): void {
     this.cargandoCatalogos = true;
     this.errorCatalogos = '';
-    const cargarBailarines = (estado: 'ACTIVO' | 'INACTIVO') =>
-      obtenerTodasLasPaginas<Bailarin>(enlace =>
-        this.bailarinesService.listar({ elenco: 'todos', estado }, enlace)
-      );
-    forkJoin({
-      activos: cargarBailarines('ACTIVO'),
-      inactivos: cargarBailarines('INACTIVO'),
-      coreografias: obtenerTodasLasPaginas<Coreografia>(enlace => this.coreografiasService.listar(enlace))
-    }).subscribe({
+    cargarCatalogosPresentacion(this.bailarinesService, this.coreografiasService).subscribe({
       next: catalogos => {
         this.activos = new Set(catalogos.activos.map(b => b.id));
-        this.bailarines = [...new Map([...catalogos.inactivos, ...catalogos.activos].map(b => [b.id, b])).values()];
+        this.bailarines = combinarBailarines(catalogos.inactivos, catalogos.activos);
         this.coreografias = catalogos.coreografias;
         this.actualizarOpcionesPersonaCargo();
         this.cargandoCatalogos = false;
@@ -200,7 +225,7 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     if (this.form.controls.tipo_presentacion.value !== 'FESTIVALIPSIS') {
       return bailarines.length ? [{ elenco: '', bailarines }] : [];
     }
-    return this.agruparPorElenco(bailarines, bailarin => bailarin.elenco)
+    return agruparPorElenco(bailarines, bailarin => bailarin.elenco, this.commons.opcionesElenco.map(opcion => opcion.value))
       .map(grupo => ({ elenco: grupo.elenco, bailarines: grupo.elementos }));
   }
 
@@ -210,37 +235,6 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
 
   get coreografiasVisibles(): Coreografia[] {
     return this.coreografias.filter(c => this.coreografiasSeleccionadas.has(c.id));
-  }
-
-  get coreografiasDetalle(): { id: number; nombre: string }[] {
-    if (!this.detalle) return [];
-    const ids = [...new Set(this.detalle.bitacora.flatMap(item => item.coreografias))];
-    return ids.map(id => ({
-      id,
-      nombre: this.coreografias.find(coreografia => coreografia.id === id)?.nombre ?? `Coreografía #${id}`
-    })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  }
-
-  get bitacoraDetalle(): Presentacion['bitacora'] {
-    if (!this.detalle) return [];
-    const ordenGenero = (id: number) => {
-      const genero = this.bailarines.find(bailarin => bailarin.id === id)?.genero;
-      return genero === 'FEMENINO' ? 0 : genero === 'MASCULINO' ? 1 : 2;
-    };
-    return [...this.detalle.bitacora].sort((a, b) =>
-      ordenGenero(a.bailarin) - ordenGenero(b.bailarin) ||
-      this.nombreBailarin(a.bailarin).localeCompare(this.nombreBailarin(b.bailarin), 'es')
-    );
-  }
-
-  get agruparDetallePorElenco(): boolean {
-    return this.detalle?.tipo_presentacion === 'FESTIVALIPSIS' && this.detalle.elencos.length > 1;
-  }
-
-  get gruposBitacoraDetalle(): { elenco: string; elementos: Presentacion['bitacora'] }[] {
-    const registros = this.bitacoraDetalle;
-    if (!this.agruparDetallePorElenco) return registros.length ? [{ elenco: '', elementos: registros }] : [];
-    return this.agruparPorElenco(registros, registro => this.bailarinDetalle(registro.bailarin)?.elenco);
   }
 
   get costoNeto(): string {
@@ -270,18 +264,32 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   }
 
   ver(id: number): void {
-    this.cargando = true;
-    this.errorListado = '';
-    this.service.obtener(id).subscribe({
+    this.solicitudDetalle?.unsubscribe();
+    this.cargandoDetalle = true;
+    this.errorDetalle = '';
+    this.detalle = null;
+    this.solicitudDetalle = this.service.obtener(id).subscribe({
       next: presentacion => {
         this.detalle = presentacion;
-        this.cargando = false;
+        this.cargandoDetalle = false;
       },
       error: error => {
-        this.cargando = false;
-        this.errorListado = this.mensajeError(error, 'No se pudo cargar el detalle de la presentación.');
+        this.cargandoDetalle = false;
+        this.errorDetalle = this.mensajeError(error, 'No se pudo cargar el detalle de la presentación.');
       }
     });
+  }
+
+  cerrarDetalle(): void {
+    this.solicitudDetalle?.unsubscribe();
+    this.cargandoDetalle = false;
+    this.detalle = null;
+    this.errorDetalle = '';
+    if (this.route.snapshot.queryParamMap.has('detalle')) {
+      void this.router.navigate([], {
+        relativeTo: this.route, queryParams: { detalle: null }, queryParamsHandling: 'merge', replaceUrl: true
+      });
+    }
   }
 
   editar(id: number): void {
@@ -437,27 +445,6 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   nombreBailarin(id: number): string {
     const bailarin = this.bailarines.find(item => item.id === id);
     return bailarin ? `${bailarin.apellidos} ${bailarin.nombres}` : `Bailarín #${id}`;
-  }
-
-  bailarinDetalle(id: number): Bailarin | undefined {
-    return this.bailarines.find(bailarin => bailarin.id === id);
-  }
-
-  private agruparPorElenco<T>(elementos: T[], obtenerElenco: (elemento: T) => string | null | undefined): { elenco: string; elementos: T[] }[] {
-    const grupos = new Map<string, T[]>();
-    for (const elemento of elementos) {
-      const elenco = obtenerElenco(elemento) || 'SIN ELENCO';
-      const grupo = grupos.get(elenco) ?? [];
-      grupo.push(elemento);
-      grupos.set(elenco, grupo);
-    }
-    const orden: string[] = this.commons.opcionesElenco.map(opcion => opcion.value);
-    return [...grupos].map(([elenco, grupo]) => ({ elenco, elementos: grupo })).sort((a, b) => {
-      const indiceA = orden.indexOf(a.elenco);
-      const indiceB = orden.indexOf(b.elenco);
-      return (indiceA < 0 ? orden.length : indiceA) - (indiceB < 0 ? orden.length : indiceB) ||
-        a.elenco.localeCompare(b.elenco, 'es');
-    });
   }
 
   private compararNombre(a: Bailarin, b: Bailarin): number {

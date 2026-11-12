@@ -3,6 +3,7 @@ import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { DashboardService, ElencoDashboard, PresentacionesResumen, ResumenDashboard } from '../../services/dashboard.service';
+import { PresentacionesService } from '../../services/presentaciones.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +15,12 @@ import { DashboardService, ElencoDashboard, PresentacionesResumen, ResumenDashbo
 export class DashboardComponent implements OnInit, OnDestroy {
   resumen: ResumenDashboard | null = null;
   presentaciones: PresentacionesResumen | null = null;
+  totalesAnuales: { actual: number; anterior: number } | null = null;
+  cargandoTotalesAnuales = false;
+  errorTotalesAnuales = '';
+  totalesMensuales: { actual: number; anterior: number } | null = null;
+  cargandoTotalesMensuales = false;
+  errorTotalesMensuales = '';
   readonly nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   cargando = false;
   error = '';
@@ -21,9 +28,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly mesActualIndice = new Date().getMonth();
   readonly elencos: ElencoDashboard[] = ['INFANTIL', 'PLANTA', 'MÁSTER'];
   private resumenSubscription?: Subscription;
+  private totalesAnualesSubscription?: Subscription;
+  private totalesMensualesSubscription?: Subscription;
 
   constructor(
     private readonly dashboardService: DashboardService,
+    private readonly presentacionesService: PresentacionesService,
     private readonly router: Router,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
@@ -38,6 +48,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.resumenSubscription?.unsubscribe();
+    this.totalesAnualesSubscription?.unsubscribe();
+    this.totalesMensualesSubscription?.unsubscribe();
   }
 
   cargarResumen(): void {
@@ -57,6 +69,53 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dashboardService.obtenerPresentacionesPorMes(this.hoy.getFullYear()).subscribe(
       presentaciones => this.presentaciones = presentaciones
     );
+    this.cargarTotalesAnuales();
+    this.cargarTotalesMensuales();
+  }
+
+  cargarTotalesAnuales(): void {
+    this.totalesAnualesSubscription?.unsubscribe();
+    this.totalesAnuales = null;
+    this.errorTotalesAnuales = '';
+    this.cargandoTotalesAnuales = true;
+    this.totalesAnualesSubscription = this.presentacionesService.reporteAnual(this.hoy.getFullYear()).subscribe({
+      next: reporte => {
+        this.totalesAnuales = reporte.meses.reduce(
+          (totales, mes) => ({
+            actual: totales.actual + mes.actual.cantidad_presentaciones,
+            anterior: totales.anterior + mes.anterior.cantidad_presentaciones
+          }),
+          { actual: 0, anterior: 0 }
+        );
+        this.cargandoTotalesAnuales = false;
+      },
+      error: () => {
+        this.cargandoTotalesAnuales = false;
+        this.errorTotalesAnuales = 'No se pudieron cargar los totales anuales.';
+      }
+    });
+  }
+
+  cargarTotalesMensuales(): void {
+    this.totalesMensualesSubscription?.unsubscribe();
+    this.totalesMensuales = null;
+    this.errorTotalesMensuales = '';
+    this.cargandoTotalesMensuales = true;
+    this.totalesMensualesSubscription = this.presentacionesService.reporteMensual(
+      this.hoy.getFullYear(), this.hoy.getMonth() + 1
+    ).subscribe({
+      next: reporte => {
+        this.totalesMensuales = {
+          actual: reporte.actual.cantidad_presentaciones,
+          anterior: reporte.anterior.cantidad_presentaciones
+        };
+        this.cargandoTotalesMensuales = false;
+      },
+      error: () => {
+        this.cargandoTotalesMensuales = false;
+        this.errorTotalesMensuales = 'No se pudieron cargar los totales mensuales.';
+      }
+    });
   }
 
   porcentajeElenco(elenco: ElencoDashboard, estado: 'activos' | 'inactivos'): number {

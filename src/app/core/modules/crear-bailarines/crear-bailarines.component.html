@@ -14,13 +14,13 @@
 			<div class="form-field">
 				<label for="bailarin-genero"><span class="field-label">Género <span class="required-mark">*</span></span></label>
 				<p-dropdown inputId="bailarin-genero" formControlName="genero" [options]="opcionesGenero" optionLabel="label" optionValue="value"
-					placeholder="Seleccione" [autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+					placeholder="Seleccione" [autoDisplayFirst]="false" appendTo="body" panelStyleClass="dancer-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
 			</div>
 			<label class="form-field"><span class="field-label">Fecha de nacimiento <span class="required-mark">*</span></span><input class="form-control date-input" type="date" formControlName="fecha_nacimiento" [max]="fechaMaxima" (change)="actualizarElencoPorFecha()"></label>
 			<div class="form-field">
 				<label for="bailarin-elenco"><span class="field-label">Elenco <span class="required-mark">*</span></span></label>
 				<p-dropdown inputId="bailarin-elenco" formControlName="elenco" [options]="opcionesElenco" optionLabel="label" optionValue="value"
-					placeholder="Seleccione un elenco" [autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+					placeholder="Seleccione un elenco" [autoDisplayFirst]="false" appendTo="body" panelStyleClass="dancer-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
 				<small class="field-hint">Se asigna automáticamente por edad: 5–13 Infantil, 14–27 Planta y mayores de 27 Máster. Puedes cambiarlo.</small>
 			</div>
 			<label>Lugar de nacimiento<input class="form-control" formControlName="lugar_nacimiento" [attr.maxlength]="limites.lugar_nacimiento"><small class="character-counter">{{ caracteresUsados('lugar_nacimiento') }}/{{ limites.lugar_nacimiento }}</small></label>
@@ -29,7 +29,7 @@
 			<div class="form-field">
 				<label for="bailarin-convivencia">Convive con</label>
 				<p-dropdown inputId="bailarin-convivencia" formControlName="vive_con" [options]="opcionesConvivencia" optionLabel="label" optionValue="value"
-					placeholder="Seleccione" [autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+					placeholder="Seleccione" [autoDisplayFirst]="false" appendTo="body" panelStyleClass="dancer-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
 			</div>
 			<label class="wide">Dirección domiciliaria<input class="form-control" formControlName="direccion_domicilio" [attr.maxlength]="limites.direccion_domicilio"><small class="character-counter">{{ caracteresUsados('direccion_domicilio') }}/{{ limites.direccion_domicilio }}</small></label>
 			<label class="wide">Referencia domiciliaria<input class="form-control" formControlName="referencia_domicilio" [attr.maxlength]="limites.referencia_domicilio"><small class="character-counter">{{ caracteresUsados('referencia_domicilio') }}/{{ limites.referencia_domicilio }}</small></label>
@@ -64,7 +64,7 @@
 			<div class="form-field">
 				<label for="bailarin-estado"><span class="field-label">Estado <span class="required-mark">*</span></span></label>
 				<p-dropdown inputId="bailarin-estado" formControlName="estado" [options]="opcionesEstado" optionLabel="label" optionValue="value"
-					[autoDisplayFirst]="false" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+					[autoDisplayFirst]="false" appendTo="body" panelStyleClass="dancer-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
 			</div>
 			<label class="wide">Motivo de ingreso
 				<textarea class="form-control" formControlName="motivo_ingreso_agrupacion" rows="3"></textarea>
@@ -88,7 +88,7 @@
 				<label for="bailarin-representante">¿Quién será el representante?</label>
 				<p-dropdown inputId="bailarin-representante" [options]="opcionesRepresentante" optionLabel="label" optionValue="value" optionDisabled="disabled"
 					[ngModel]="representanteSeleccionado" [ngModelOptions]="{standalone: true}" (ngModelChange)="seleccionarRepresentante($event)"
-					appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+					appendTo="body" panelStyleClass="dancer-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
 			</div>
 			<label><span class="field-label">Representante <span class="required-mark">*</span></span><input class="form-control" formControlName="nombres_completos_representante" maxlength="200" [readonly]="representanteSeleccionado !== 'OTRO'"></label>
 			<label><span class="field-label">Celular del representante <span class="required-mark">*</span></span><input class="form-control" formControlName="celular_representante" maxlength="20" [readonly]="representanteSeleccionado !== 'OTRO'"></label>

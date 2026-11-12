@@ -135,35 +135,39 @@
 				<header class="card-heading">
 					<div class="heading-icon teal-icon"><i class="pi pi-chart-line" aria-hidden="true"></i></div>
 					<div><h2>Presentaciones</h2><p>Comparativas de actividad</p></div>
-					<span class="pending-badge"><i class="pi pi-link" aria-hidden="true"></i> API pendiente</span>
 				</header>
 				<div class="presentation-comparisons">
-					<div class="comparison-panel">
+					<a class="comparison-panel comparison-link" routerLink="/comparativas" [queryParams]="{ tab: 'anual' }" title="Ver reporte anual de presentaciones">
 						<div class="comparison-title"><span>Acumulado hasta hoy</span><i class="pi pi-calendar" aria-hidden="true"></i></div>
 						<div class="comparison-values">
-							<div><strong>—</strong><span>{{ hoy.getFullYear() }}</span></div>
+							<div><strong>{{ totalesAnuales ? totalesAnuales.actual : '—' }}</strong><span>{{ hoy.getFullYear() }}</span></div>
 							<i class="pi pi-arrow-right" aria-hidden="true"></i>
-							<div><strong>—</strong><span>{{ anioAnterior }}</span></div>
+							<div><strong>{{ totalesAnuales ? totalesAnuales.anterior : '—' }}</strong><span>{{ anioAnterior }}</span></div>
 						</div>
-						<div class="comparison-placeholder" aria-label="Gráfico disponible al conectar el servicio de presentaciones">
-							<i class="pi pi-chart-bar" aria-hidden="true"></i><span>Esperando datos de presentaciones</span>
-						</div>
-						<small>Presentaciones de este año vs. el mismo periodo del año anterior</small>
-					</div>
-					<div class="comparison-panel">
+						<small *ngIf="cargandoTotalesAnuales" role="status">Cargando totales anuales…</small>
+						<small>Totales anuales: suma de todos los meses incluidos en el reporte.</small>
+					</a>
+					<a class="comparison-panel comparison-link monthly-comparison-link" routerLink="/comparativas" [queryParams]="{ tab: 'mensual' }" title="Ver reporte mensual de presentaciones">
 						<div class="comparison-title"><span>Comparativa mensual</span><i class="pi pi-chart-bar" aria-hidden="true"></i></div>
 						<div class="comparison-values">
-							<div><strong>—</strong><span>{{ mesActual }} {{ hoy.getFullYear() }}</span></div>
+							<div><strong>{{ totalesMensuales ? totalesMensuales.actual : '—' }}</strong><span>{{ mesActual }} {{ hoy.getFullYear() }}</span></div>
 							<i class="pi pi-arrow-right" aria-hidden="true"></i>
-							<div><strong>—</strong><span>{{ mesActual }} {{ anioAnterior }}</span></div>
+							<div><strong>{{ totalesMensuales ? totalesMensuales.anterior : '—' }}</strong><span>{{ mesActual }} {{ anioAnterior }}</span></div>
 						</div>
-						<div class="comparison-placeholder monthly-placeholder" aria-label="Gráfico disponible al conectar el servicio de presentaciones">
-							<i class="pi pi-chart-line" aria-hidden="true"></i><span>Esperando datos de presentaciones</span>
-						</div>
+						<small *ngIf="cargandoTotalesMensuales" role="status">Cargando totales mensuales…</small>
 						<small>Presentaciones del mes actual vs. el mismo mes del año anterior</small>
-					</div>
+					</a>
 				</div>
-				<p class="api-note"><i class="pi pi-info-circle" aria-hidden="true"></i> El diseño está preparado; falta conectar el endpoint de presentaciones para mostrar cifras reales.</p>
+				<div *ngIf="errorTotalesAnuales" class="api-note" role="alert">
+					<i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+					<span>{{ errorTotalesAnuales }}</span>
+					<button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarTotalesAnuales()">Reintentar</button>
+				</div>
+				<div *ngIf="errorTotalesMensuales" class="api-note" role="alert">
+					<i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+					<span>{{ errorTotalesMensuales }}</span>
+					<button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarTotalesMensuales()">Reintentar</button>
+				</div>
 			</article>
 		</section>
 	</ng-container>

@@ -9,6 +9,9 @@
     {{ errorCatalogos }} <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarCatalogos()">Reintentar</button>
   </div>
   <div *ngIf="mensajeExito" class="alert alert-success" role="status">{{ mensajeExito }}</div>
+  <a *ngIf="desdeComparativas" routerLink="/comparativas" class="btn btn-outline-secondary">Volver a comparativas</a>
+  <div *ngIf="cargandoDetalle" class="alert alert-info" role="status">Cargando detalle de la presentación…</div>
+  <div *ngIf="errorDetalle" class="alert alert-danger" role="alert">{{ errorDetalle }}</div>
 
   <section class="card-panel">
     <h2>Listado de presentaciones</h2>
@@ -40,7 +43,7 @@
               <td>{{ nombreBailarin(presentacion.persona_cargo) }}</td><td>{{ presentacion.tipo_presentacion }}</td>
               <td>{{ presentacion.elencos.join(', ') }}</td><td>{{ presentacion.costo_neto }}</td>
               <td class="list-actions">
-                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="ver(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos" [attr.aria-label]="'Ver presentación de ' + presentacion.lugar">Ver</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="ver(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos || cargandoDetalle" [attr.aria-label]="'Ver presentación de ' + presentacion.lugar">Ver</button>
                 <button type="button" class="btn btn-sm btn-outline-primary" (click)="editar(presentacion.id)" [disabled]="cargandoCatalogos || !!errorCatalogos">Editar</button>
               </td>
             </tr>
@@ -56,51 +59,11 @@
   </section>
 </main>
 
-<div *ngIf="detalle as presentacion" class="modal-backdrop-custom">
-  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="detalle-presentacion-titulo">
-    <header class="modal-heading">
-      <h2 id="detalle-presentacion-titulo">Detalle de la presentación</h2>
-      <button type="button" class="close-modal" (click)="detalle = null" aria-label="Cerrar detalle">&times;</button>
-    </header>
-    <h3>Datos de la presentación</h3>
-    <dl class="detail-grid">
-      <div><dt>Fecha</dt><dd>{{ presentacion.fecha }}</dd></div>
-      <div><dt>Hora de presentación</dt><dd>{{ presentacion.hora_presentacion }}</dd></div>
-      <div><dt>Lugar</dt><dd>{{ presentacion.lugar }}</dd></div>
-      <div><dt>Persona a cargo</dt><dd>{{ nombreBailarin(presentacion.persona_cargo) }}</dd></div>
-      <div><dt>Costo total</dt><dd>{{ presentacion.costo_total_presentacion }}</dd></div>
-      <div><dt>Costo de transporte</dt><dd>{{ presentacion.costo_transporte }}</dd></div>
-      <div><dt>Costo neto</dt><dd>{{ presentacion.costo_neto }}</dd></div>
-      <div><dt>Nombre del transporte</dt><dd>{{ presentacion.nombre_transporte }}</dd></div>
-      <div><dt>Tipo de presentación</dt><dd>{{ presentacion.tipo_presentacion }}</dd></div>
-      <div><dt>Elencos</dt><dd>{{ presentacion.elencos.join(', ') || '—' }}</dd></div>
-      <div><dt>Coreografías</dt><dd><span *ngFor="let coreografia of coreografiasDetalle; let ultima = last">{{ coreografia.nombre }}{{ ultima ? '' : ', ' }}</span><span *ngIf="!coreografiasDetalle.length">—</span></dd></div>
-    </dl>
-    <section class="assignment-section">
-      <h3>Bailarines y coreografías</h3>
-      <div class="table-scroll">
-        <table class="table assignment-table align-middle">
-          <thead><tr><th scope="col">Bailarín</th><th scope="col">Género</th><th scope="col">Elenco</th><th *ngFor="let coreografia of coreografiasDetalle" scope="col">{{ coreografia.nombre }}</th></tr></thead>
-          <tbody *ngFor="let grupo of gruposBitacoraDetalle; trackBy: identificarGrupo">
-            <tr *ngIf="agruparDetallePorElenco" class="elenco-separator">
-              <th scope="rowgroup" [attr.colspan]="3 + coreografiasDetalle.length">Elenco: {{ grupo.elenco }}</th>
-            </tr>
-            <tr *ngFor="let registro of grupo.elementos">
-              <th scope="row">{{ nombreBailarin(registro.bailarin) }}</th>
-              <td>{{ bailarinDetalle(registro.bailarin)?.genero || '—' }}</td>
-              <td>{{ bailarinDetalle(registro.bailarin)?.elenco || '—' }}</td>
-              <td *ngFor="let coreografia of coreografiasDetalle">{{ registro.coreografias.includes(coreografia.id) ? 'Sí' : 'No' }}</td>
-            </tr>
-          </tbody>
-          <tbody *ngIf="!presentacion.bitacora.length">
-            <tr><td [attr.colspan]="3 + coreografiasDetalle.length" class="empty-state">No hay bailarines registrados en esta presentación.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-    <div class="form-actions"><button type="button" class="btn btn-outline-secondary" (click)="detalle = null">Cerrar</button></div>
-  </section>
-</div>
+<ng-container *ngIf="detalle as presentacion">
+  <app-detalle-presentacion *ngIf="!cargandoCatalogos && !errorCatalogos"
+    [presentacion]="presentacion" [bailarines]="bailarines" [coreografias]="coreografias"
+    (cerrar)="cerrarDetalle()"></app-detalle-presentacion>
+</ng-container>
 
 <div *ngIf="mostrandoFormulario" class="modal-backdrop-custom">
   <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="presentacion-titulo">
@@ -122,7 +85,7 @@
             [options]="opcionesPersonaCargo" optionLabel="label" optionValue="value" [autoDisplayFirst]="false" [filter]="true"
             filterBy="label" filterPlaceholder="Buscar persona" ariaFilterLabel="Buscar persona a cargo" [resetFilterOnHide]="true"
             emptyFilterMessage="No se encontraron personas."
-            placeholder="Seleccione" emptyMessage="No hay bailarines disponibles." appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+            placeholder="Seleccione" emptyMessage="No hay bailarines disponibles." appendTo="body" panelStyleClass="presentation-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
         </div>
         <label>Costo total *<input type="text" inputmode="decimal" class="form-control" formControlName="costo_total_presentacion" maxlength="13" placeholder="0.00" required></label>
         <label>Costo de transporte *<input type="text" inputmode="decimal" class="form-control" formControlName="costo_transporte" maxlength="13" placeholder="0.00" required></label>
@@ -132,25 +95,25 @@
           <label for="tipo-presentacion">Tipo de presentación *</label>
           <p-dropdown id="selector-tipo-presentacion" inputId="tipo-presentacion" formControlName="tipo_presentacion"
             [options]="opcionesTipoPresentacion" optionLabel="label" optionValue="value" (onChange)="cambiarTipo()"
-            appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+            appendTo="body" panelStyleClass="presentation-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
         </div>
         <div class="select-field" *ngIf="form.controls.tipo_presentacion.value === 'UN ELENCO'">
           <label for="elenco-unico">Elenco *</label>
           <p-dropdown id="selector-elenco-unico" inputId="elenco-unico" [options]="opcionesElenco" optionLabel="label" optionValue="value"
             [ngModel]="elencos[0] || null" [ngModelOptions]="{standalone: true}" (ngModelChange)="seleccionarUnElenco($event)"
-            placeholder="Seleccione un elenco" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+            placeholder="Seleccione un elenco" appendTo="body" panelStyleClass="presentation-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
         </div>
         <div class="select-field" *ngIf="form.controls.tipo_presentacion.value === 'FESTIVALIPSIS'">
           <label for="elencos-multiples">Elencos *</label>
           <p-multiSelect id="selector-elencos" inputId="elencos-multiples" [options]="opcionesElenco" optionLabel="label" optionValue="value"
             [ngModel]="elencos" [ngModelOptions]="{standalone: true}" (ngModelChange)="elencos = $event || []"
-            placeholder="Seleccione los elencos" appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-multiSelect>
+            placeholder="Seleccione los elencos" appendTo="body" panelStyleClass="presentation-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-multiSelect>
         </div>
         <div class="select-field">
           <label for="coreografias-multiples">Coreografías</label>
           <p-multiSelect id="selector-coreografias" inputId="coreografias-multiples" [options]="coreografias" optionLabel="nombre" optionValue="id"
             [ngModel]="idsCoreografiasSeleccionadas" [ngModelOptions]="{standalone: true}" (ngModelChange)="actualizarCoreografias($event)"
-            placeholder="Seleccione las coreografías" emptyMessage="No hay coreografías registradas." appendTo="body" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}">
+            placeholder="Seleccione las coreografías" emptyMessage="No hay coreografías registradas." appendTo="body" panelStyleClass="presentation-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}">
             <ng-template let-coreografia pTemplate="item">{{ coreografia.nombre }} · {{ coreografia.region }}</ng-template>
           </p-multiSelect>
           <small class="field-hint">Cada coreografía debe tener al menos un bailarín para guardarse.</small>

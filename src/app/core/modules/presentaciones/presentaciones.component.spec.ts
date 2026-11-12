@@ -1,5 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
 import { Dropdown } from 'primeng/dropdown';
 import { MultiSelect } from 'primeng/multiselect';
 import { Paginator } from 'primeng/paginator';
@@ -46,6 +47,7 @@ describe('PresentacionesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PresentacionesComponent],
       providers: [
+        provideRouter([{ path: 'presentaciones', component: PresentacionesComponent }]),
         { provide: PresentacionesService, useValue: service },
         { provide: BailarinesService, useValue: bailarinesService },
         { provide: CoreografiasService, useValue: coreografiasService }
@@ -232,7 +234,10 @@ describe('PresentacionesComponent', () => {
       component.ver(5);
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('[aria-labelledby="detalle-presentacion-titulo"] .elenco-separator')).toBeNull();
-      expect(component.gruposBitacoraDetalle[0].elementos.map(registro => registro.bailarin)).toEqual([2, 1]);
+      const nombres = Array.from(fixture.nativeElement.querySelectorAll(
+        '[aria-labelledby="detalle-presentacion-titulo"] .assignment-table tbody tr th'
+      ) as NodeListOf<HTMLElement>).map(celda => celda.textContent?.trim());
+      expect(nombres).toEqual(['Sol Ana', 'Paz Juan']);
     }
   });
 
@@ -249,11 +254,56 @@ describe('PresentacionesComponent', () => {
     service.obtener.and.returnValue(throwError(() => new Error('Error al consultar')));
     component.ver(5);
     fixture.detectChanges();
-    expect(component.cargando).toBeFalse();
-    expect(component.errorListado).toContain('Error al consultar');
+    expect(component.cargandoDetalle).toBeFalse();
+    expect(component.errorDetalle).toContain('Error al consultar');
     expect(component.detalle).toBeNull();
     expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Error al consultar');
   });
+
+  it('espera los catálogos antes de mostrar el detalle y permite cerrarlo', () => {
+    component.cargandoCatalogos = true;
+    component.ver(5);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-labelledby="detalle-presentacion-titulo"]')).toBeNull();
+    component.cargandoCatalogos = false;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-labelledby="detalle-presentacion-titulo"]')).toBeTruthy();
+    component.cerrarDetalle();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-labelledby="detalle-presentacion-titulo"]')).toBeNull();
+  });
+
+  it('cancela la solicitud de detalle al cerrar', () => {
+    const pendiente = new Subject<Presentacion>();
+    service.obtener.and.returnValue(pendiente);
+    component.ver(5);
+    component.cerrarDetalle();
+    expect(pendiente.observed).toBeFalse();
+    expect(component.cargandoDetalle).toBeFalse();
+  });
+
+  it('abre desde la ruta el detalle de una presentación y limpia el parámetro al cerrar', fakeAsync(() => {
+    const router = TestBed.inject(Router);
+    router.navigateByUrl('/presentaciones?detalle=5&origen=comparativas');
+    tick();
+    fixture.detectChanges();
+    expect(service.obtener).toHaveBeenCalledWith(5);
+    expect(component.desdeComparativas).toBeTrue();
+    expect(fixture.nativeElement.querySelector('[aria-labelledby="detalle-presentacion-titulo"]')).toBeTruthy();
+    component.cerrarDetalle();
+    tick();
+    expect(router.parseUrl(router.url).queryParams['detalle']).toBeUndefined();
+    expect(component.detalle).toBeNull();
+  }));
+
+  it('muestra un error para un identificador inválido en la ruta', fakeAsync(() => {
+    TestBed.inject(Router).navigateByUrl('/presentaciones?detalle=invalido');
+    tick();
+    fixture.detectChanges();
+    expect(service.obtener).not.toHaveBeenCalled();
+    expect(component.errorDetalle).toContain('no es válido');
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('no es válido');
+  }));
 
   it('mantiene estable el valor de coreografías mientras no cambie la selección', () => {
     component.nuevo();

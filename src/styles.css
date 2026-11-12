@@ -3,20 +3,30 @@ body {
 	background-color: #fff;
 }
 
-.presentation-date-filter-panel .p-multiselect-header {
+.presentation-date-filter-panel .p-multiselect-header,
+.presentation-form-select-panel .p-multiselect-header,
+.presentation-form-select-panel .p-dropdown-header {
 	padding: 0.5rem;
 }
 
-.presentation-date-filter-panel .p-multiselect-filter {
+.presentation-date-filter-panel .p-multiselect-filter,
+.presentation-form-select-panel .p-multiselect-filter,
+.presentation-form-select-panel .p-dropdown-filter {
 	padding: 0.4rem 2rem 0.4rem 0.5rem;
 	font-size: 0.875rem;
 }
 
-.presentation-date-filter-panel .p-multiselect-items {
+.presentation-date-filter-panel .p-multiselect-items,
+.presentation-form-select-panel .p-multiselect-items,
+.presentation-form-select-panel .p-dropdown-items,
+.dancer-form-select-panel .p-dropdown-items {
 	padding: 0.25rem 0;
 }
 
-.presentation-date-filter-panel .p-multiselect-items .p-multiselect-item {
+.presentation-date-filter-panel .p-multiselect-items .p-multiselect-item,
+.presentation-form-select-panel .p-multiselect-items .p-multiselect-item,
+.presentation-form-select-panel .p-dropdown-items .p-dropdown-item,
+.dancer-form-select-panel .p-dropdown-items .p-dropdown-item {
 	padding: 0.4rem 0.6rem;
 	font-size: 0.875rem;
 }

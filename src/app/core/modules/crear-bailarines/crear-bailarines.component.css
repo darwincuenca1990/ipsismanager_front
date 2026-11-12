@@ -69,6 +69,15 @@
 	width: 100%;
 }
 
+:host ::ng-deep .form-field .p-dropdown-label {
+	padding: 0.5rem 0.65rem;
+	font-size: 0.875rem;
+}
+
+:host ::ng-deep .form-field .p-dropdown-trigger {
+	width: 2rem;
+}
+
 .character-counter {
 	margin-top: -0.2rem;
 	color: #718096;

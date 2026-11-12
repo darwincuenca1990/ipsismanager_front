@@ -25,13 +25,14 @@ th { color: #64748b; background: #f8fafc; font-size: .75rem; text-transform: upp
 .close-modal { width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%; color: #475569; background: #e9eef5; font-size: 1.5rem; }
 .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .form-grid label { display: grid; gap: .35rem; }
-.detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-.detail-grid dt { color: #64748b; font-size: .85rem; }
-.detail-grid dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
 .form-grid .check-option, .check-option { display: inline-flex; align-items: center; gap: .4rem; margin-right: 1rem; }
 .select-field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
 .select-field label { display: block; }
 .select-field p-dropdown, .select-field p-multiselect { display: block; width: 100%; }
+:host ::ng-deep .select-field .p-dropdown-label,
+:host ::ng-deep .select-field .p-multiselect-label { padding: .5rem .65rem; font-size: .875rem; }
+:host ::ng-deep .select-field .p-dropdown-trigger,
+:host ::ng-deep .select-field .p-multiselect-trigger { width: 2rem; }
 .field-hint { display: block; margin-top: .35rem; color: #64748b; }
 .net-cost { background: #edf2f7; }
 .assignment-section { margin-top: 1.5rem; }
@@ -43,6 +44,5 @@ th { color: #64748b; background: #f8fafc; font-size: .75rem; text-transform: upp
 @media (max-width: 700px) {
   .page-heading { align-items: stretch; flex-direction: column; }
   .form-grid { grid-template-columns: 1fr; }
-  .detail-grid { grid-template-columns: 1fr; }
   .form-modal { padding: 1rem; }
 }

@@ -7,6 +7,8 @@ import { BailarinesComponent } from './core/modules/bailarines/bailarines.compon
 import { CumpleanosComponent } from './core/modules/cumpleanos/cumpleanos.component';
 import { PresentacionesComponent } from './core/modules/presentaciones/presentaciones.component';
 import { CoreografiasComponent } from './core/modules/coreografias/coreografias.component';
+import { ComparativasComponent } from './core/modules/comparativas/comparativas.component';
+import { InventarioComponent } from './core/modules/inventario/inventario.component';
 
 
 export const routes: Routes = [
@@ -50,6 +52,18 @@ export const routes: Routes = [
                 data: { breadcrumb: 'Coreografías' },
                 canActivate: [AuthGuard],
             },
+            {
+                path: 'comparativas',
+                component: ComparativasComponent,
+                data: { breadcrumb: 'Comparativas' },
+                canActivate: [AuthGuard],
+            },           
+            {
+                path: 'inventario',
+                component: InventarioComponent,
+                data: { breadcrumb: 'Inventario' },
+                canActivate: [AuthGuard],
+            },                         
         ]
     }
 ];

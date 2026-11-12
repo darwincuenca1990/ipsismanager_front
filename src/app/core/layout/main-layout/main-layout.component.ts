@@ -151,6 +151,18 @@ export class MainLayoutComponent {
         routerLinkActiveOptions: { exact: true }
       },
       {
+        label: 'Comparativas',
+        icon: 'pi pi-chart-line',
+        routerLink: '/comparativas',
+        routerLinkActiveOptions: { exact: true }
+      },     
+      {
+        label: 'Inventario',
+        icon: 'pi pi-file-excel',
+        routerLink: '/inventario',
+        routerLinkActiveOptions: { exact: true }
+      },        
+      {
         label: 'Ipsis Boot',
         icon: 'pi pi-android',
         //routerLink: '/misRegistros',

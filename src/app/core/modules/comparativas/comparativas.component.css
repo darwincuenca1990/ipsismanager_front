@@ -1,0 +1,24 @@
+.comparativas-page { max-width: 1440px; margin: auto; padding: clamp(1rem, 3vw, 2rem); color: #172b4d; }
+.page-heading h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 750; }
+.page-heading p { color: #64748b; }
+.page-heading .eyebrow { margin-bottom: .25rem; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+.report-tabs { display: flex; flex-wrap: wrap; gap: .5rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 1rem; }
+.report-tabs button { border: 0; border-bottom: 3px solid transparent; background: transparent; padding: .65rem 1rem; color: #64748b; font-weight: 600; }
+.report-tabs button.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+.report-card { padding: 1.25rem; border: 1px solid #e5eaf2; border-radius: 1rem; background: #fff; }
+.report-card h2 { font-size: 1.2rem; }
+.report-card h3 { margin: 1.2rem 0 .75rem; font-size: 1rem; }
+.report-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin: 1rem 0; }
+.filter-field { display: grid; gap: .35rem; width: min(100%, 220px); }
+.filter-field label { font-size: .85rem; font-weight: 600; }
+:host ::ng-deep .filter-field .p-dropdown-label { padding: .5rem .65rem; font-size: .875rem; }
+:host ::ng-deep .filter-field .p-dropdown-trigger { width: 2rem; }
+.report-error { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.table-scroll { overflow-x: auto; }
+.report-table th { color: #475569; background: #f8fafc; }
+.id-link { padding: 0; border: 0; color: #0d6efd; background: transparent; text-decoration: underline; cursor: pointer; }
+.id-link:disabled { opacity: .6; cursor: wait; }
+.annual-table { min-width: 900px; }
+.chart-section { margin-top: 1.5rem; }
+.chart-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: .75rem; }
+.chart-section p { color: #64748b; font-size: .85rem; }
