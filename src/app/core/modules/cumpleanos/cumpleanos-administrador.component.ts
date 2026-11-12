@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import {
   EstadoGeneracion,
@@ -43,7 +44,7 @@ interface ResultadoDetector {
   templateUrl: './cumpleanos-administrador.component.html',
   styleUrl: './cumpleanos-administrador.component.css'
 })
-export class CumpleanosAdministradorComponent implements OnInit {
+export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
   tarjetasNoGeneradas: TarjetaAdmin[] = [];
   tarjetasAprobadas: TarjetaAdmin[] = [];
   tarjetasPublicadas: TarjetaAdmin[] = [];
@@ -69,6 +70,11 @@ export class CumpleanosAdministradorComponent implements OnInit {
   probandoDetector = false;
   detectorEjecutado = false;
   resultadoDetector: ResultadoDetector | null = null;
+  errorFormulario = '';
+  private solicitudDetector?: Subscription;
+  private solicitudNoGeneradas?: Subscription;
+  private solicitudAprobadas?: Subscription;
+  private solicitudPublicadas?: Subscription;
 
   readonly plataformas: { value: PlataformaRedSocial; label: string }[] = [
     { value: 'FACEBOOK', label: 'Facebook' },
@@ -94,13 +100,22 @@ export class CumpleanosAdministradorComponent implements OnInit {
     this.cargarTarjetas();
   }
 
+  ngOnDestroy(): void {
+    this.solicitudDetector?.unsubscribe();
+    this.solicitudNoGeneradas?.unsubscribe();
+    this.solicitudAprobadas?.unsubscribe();
+    this.solicitudPublicadas?.unsubscribe();
+  }
+
   cargarTarjetas(): void {
+    this.solicitudNoGeneradas?.unsubscribe();
+    this.solicitudAprobadas?.unsubscribe();
     this.cargando = true;
     this.error = '';
     this.cargarTarjetasPublicadas();
 
     // Cargar tarjetas no generadas
-    this.cumpleanosService.listarTarjetasNoGeneradas().subscribe({
+    this.solicitudNoGeneradas = this.cumpleanosService.listarTarjetasNoGeneradas().subscribe({
       next: tarjetas => {
         this.tarjetasNoGeneradas = tarjetas.map(t => ({ 
           ...t, 
@@ -110,6 +125,7 @@ export class CumpleanosAdministradorComponent implements OnInit {
       },
       error: error => {
         this.error = this.mensajeError(error, 'No se pudieron cargar las tarjetas no generadas.');
+        this.cargando = false;
       },
       complete: () => this.cargarTarjetasListasParaPublicar()
     });
@@ -154,8 +170,9 @@ export class CumpleanosAdministradorComponent implements OnInit {
   }
 
   private cargarTarjetasPublicadas(): void {
+    this.solicitudPublicadas?.unsubscribe();
     this.cargandoPublicadas = true;
-    this.cumpleanosService.listarTarjetasPublicadas().subscribe({
+    this.solicitudPublicadas = this.cumpleanosService.listarTarjetasPublicadas().subscribe({
       next: tarjetas => this.tarjetasPublicadas = tarjetas,
       error: error => {
         this.cargandoPublicadas = false;
@@ -166,7 +183,7 @@ export class CumpleanosAdministradorComponent implements OnInit {
   }
 
   private cargarTarjetasListasParaPublicar(): void {
-    this.cumpleanosService.listarTarjetasListasParaPublicar().subscribe({
+    this.solicitudAprobadas = this.cumpleanosService.listarTarjetasListasParaPublicar().subscribe({
       next: tarjetas => {
         this.tarjetasAprobadas = tarjetas.map(t => ({ 
           ...t, 
@@ -175,7 +192,8 @@ export class CumpleanosAdministradorComponent implements OnInit {
         }));
       },
       error: error => {
-        console.error('Error al cargar tarjetas listas para publicar:', error);
+        this.error = this.mensajeError(error, 'No se pudieron cargar las tarjetas listas para publicar.');
+        this.cargando = false;
       },
       complete: () => this.cargando = false
     });
@@ -183,44 +201,49 @@ export class CumpleanosAdministradorComponent implements OnInit {
 
   abrirFormularioGeneracion(tarjeta: TarjetaAdmin): void {
     this.tarjetaSeleccionada = tarjeta;
+    this.formGeneracion.enable();
     this.formGeneracion.reset({ imagen: null, mensaje_generado: '' });
+    this.imagenSeleccionada = null;
+    this.errorFormulario = '';
     this.mostrarFormularioGeneracion = true;
     this.error = '';
   }
 
   cerrarFormularioGeneracion(): void {
+    if (this.tarjetaSeleccionada?.cargandoGeneracion || this.tarjetaSeleccionada?.cargandoPublicacion) return;
     this.mostrarFormularioGeneracion = false;
     this.tarjetaSeleccionada = null;
     this.imagenSeleccionada = null;
     this.formGeneracion.reset();
+    this.errorFormulario = '';
   }
 
   onImagenSeleccionada(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files?.length) {
-      const file = input.files[0];
-      this.imagenSeleccionada = file;
-      this.formGeneracion.patchValue({ imagen: file });
-    }
+    const file = input.files?.[0] ?? null;
+    this.imagenSeleccionada = file;
+    this.formGeneracion.patchValue({ imagen: file });
   }
 
   generarTarjetaManualmente(): void {
     this.formGeneracion.markAllAsTouched();
-    if (this.formGeneracion.invalid || !this.tarjetaSeleccionada) return;
+    if (this.formGeneracion.invalid || !this.tarjetaSeleccionada || this.tarjetaSeleccionada.cargandoGeneracion) return;
 
     const payload = this.formGeneracion.getRawValue();
     if (!payload.imagen) return;
 
-    if (!this.tarjetaSeleccionada.cargandoGeneracion) {
-      this.tarjetaSeleccionada.cargandoGeneracion = true;
-    }
+    const tarjeta = this.tarjetaSeleccionada;
+    tarjeta.cargandoGeneracion = true;
+    this.errorFormulario = '';
+    this.formGeneracion.disable();
 
-    this.cumpleanosService.generarTarjetaManualmente(this.tarjetaSeleccionada.id, {
+    this.cumpleanosService.generarTarjetaManualmente(tarjeta.id, {
       imagen: payload.imagen,
       mensaje_generado: payload.mensaje_generado
     }).subscribe({
       next: tarjetaActualizada => {
-        this.tarjetaSeleccionada!.cargandoGeneracion = false;
+        tarjeta.cargandoGeneracion = false;
+        this.formGeneracion.enable();
         const index = this.tarjetasNoGeneradas.findIndex(t => t.id === tarjetaActualizada.id);
         if (index !== -1) {
           this.tarjetasNoGeneradas[index] = {
@@ -240,8 +263,9 @@ export class CumpleanosAdministradorComponent implements OnInit {
         });
       },
       error: error => {
-        this.tarjetaSeleccionada!.cargandoGeneracion = false;
-        this.error = this.mensajeError(error, 'No se pudo generar la tarjeta.');
+        tarjeta.cargandoGeneracion = false;
+        this.formGeneracion.enable();
+        this.errorFormulario = this.mensajeError(error, 'No se pudo generar la tarjeta.');
       }
     });
   }
@@ -282,6 +306,7 @@ export class CumpleanosAdministradorComponent implements OnInit {
     }
 
     this.tarjetaSeleccionada = tarjeta;
+    this.formPublicacion.enable();
     this.formPublicacion.reset({
       plataformas: [],
       texto_publicacion: this.obtenerTextoPublicacionDefault(tarjeta)
@@ -303,24 +328,26 @@ export class CumpleanosAdministradorComponent implements OnInit {
 
   publicarEnRedesSociales(): void {
     this.formPublicacion.markAllAsTouched();
-    if (this.formPublicacion.invalid || !this.tarjetaSeleccionada) return;
+    if (this.formPublicacion.invalid || !this.tarjetaSeleccionada || this.tarjetaSeleccionada.cargandoPublicacion) return;
 
     const payload = this.formPublicacion.getRawValue();
     if (payload.plataformas.length === 0) {
-      this.error = 'Selecciona al menos una red social.';
+      this.errorFormulario = 'Selecciona al menos una red social.';
       return;
     }
 
-    if (!this.tarjetaSeleccionada.cargandoPublicacion) {
-      this.tarjetaSeleccionada.cargandoPublicacion = true;
-    }
+    const tarjeta = this.tarjetaSeleccionada;
+    tarjeta.cargandoPublicacion = true;
+    this.errorFormulario = '';
+    this.formPublicacion.disable();
 
-    this.cumpleanosService.publicarEnRedesSociales(this.tarjetaSeleccionada.id, {
+    this.cumpleanosService.publicarEnRedesSociales(tarjeta.id, {
       plataformas: payload.plataformas,
       texto_publicacion: payload.texto_publicacion
     }).subscribe({
       next: tarjetaActualizada => {
-        this.tarjetaSeleccionada!.cargandoPublicacion = false;
+        tarjeta.cargandoPublicacion = false;
+        this.formPublicacion.enable();
         const index = this.tarjetasNoGeneradas.findIndex(t => t.id === tarjetaActualizada.id);
         if (index !== -1) {
           this.tarjetasNoGeneradas[index] = {
@@ -341,8 +368,9 @@ export class CumpleanosAdministradorComponent implements OnInit {
         });
       },
       error: error => {
-        this.tarjetaSeleccionada!.cargandoPublicacion = false;
-        this.error = this.mensajeError(error, 'No se pudo publicar en las redes sociales.');
+        tarjeta.cargandoPublicacion = false;
+        this.formPublicacion.enable();
+        this.errorFormulario = this.mensajeError(error, 'No se pudo publicar en las redes sociales.');
       }
     });
   }
@@ -388,15 +416,18 @@ export class CumpleanosAdministradorComponent implements OnInit {
     this.resultadoDetector = null;
     this.error = '';
 
-    this.cumpleanosService.ejecutarDetector().subscribe({
+    this.solicitudDetector = this.cumpleanosService.ejecutarDetector().subscribe({
       next: resultado => {
         this.resultadoDetector = resultado as ResultadoDetector;
         this.detectorEjecutado = true;
-        this.probandoDetector = false;
       },
       error: error => {
         this.error = this.mensajeError(error, 'No se pudo ejecutar el detector de afiches.');
         this.probandoDetector = false;
+      },
+      complete: () => {
+        this.probandoDetector = false;
+        if (this.detectorEjecutado) this.cargarTarjetas();
       }
     });
   }

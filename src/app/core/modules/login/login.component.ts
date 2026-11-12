@@ -67,9 +67,9 @@ export class LoginComponent {
   setInfoUser(res: any) {
     const user = {
       username: res.data.user.username,
-      correo: res.data.user.email,
-      nombre: res.data.user.first_name,
-      apellido: res.data.user.last_name,
+      correo: res.data.user.correo,
+      nombre: res.data.user.nombre,
+      apellido: res.data.user.apellido,
       rol: res.data.user.groups?.length ? res.data.user.groups[0] : '',
       fechaRegistro: res.data.user.date_joined,
     };

@@ -342,12 +342,13 @@
 				<h2 *ngIf="tarjetaSeleccionada?.estado_generacion === 'NO_GENERADA'">Generar afiche</h2>
 				<h2 *ngIf="tarjetaSeleccionada?.estado_generacion === 'GENERADA'">Publicar en redes sociales</h2>
 			</div>
-			<button type="button" class="close-button" (click)="cerrarFormularioGeneracion()" aria-label="Cerrar">&times;</button>
+			<button type="button" class="close-button" (click)="cerrarFormularioGeneracion()" [disabled]="tarjetaSeleccionada?.cargandoGeneracion || tarjetaSeleccionada?.cargandoPublicacion" aria-label="Cerrar">&times;</button>
 		</header>
 
 		<!-- Formulario de generación -->
 		<form *ngIf="tarjetaSeleccionada?.estado_generacion === 'NO_GENERADA'" [formGroup]="formGeneracion" (ngSubmit)="generarTarjetaManualmente()">
 			<div class="form-body">
+				<div *ngIf="errorFormulario" class="error-message" role="alert">{{ errorFormulario }}</div>
 				<div *ngIf="tarjetaSeleccionada" class="tarjeta-info">
 					<p><strong>Bailarín:</strong> {{ tarjetaSeleccionada.bailarin_nombre || (tarjetaSeleccionada.bailarin?.nombres + ' ' + tarjetaSeleccionada.bailarin?.apellidos) }}</p>
 					<p><strong>Año:</strong> {{ tarjetaSeleccionada.anio }}</p>
@@ -378,9 +379,8 @@
 					<textarea
 						class="form-control"
 						formControlName="mensaje_generado"
-						rows="5"
+						rows="3"
 						placeholder="Mensaje que acompañará el afiche…"
-						[disabled]="(tarjetaSeleccionada?.cargandoGeneracion ?? false)"
 					></textarea>
 					<small *ngIf="formGeneracion.get('mensaje_generado')?.hasError('required') && formGeneracion.get('mensaje_generado')?.touched" class="validation-error">
 						El mensaje es obligatorio.
@@ -402,6 +402,7 @@
 		<!-- Formulario de publicación -->
 		<form *ngIf="tarjetaSeleccionada?.estado_generacion === 'GENERADA'" [formGroup]="formPublicacion" (ngSubmit)="publicarEnRedesSociales()">
 			<div class="form-body">
+				<div *ngIf="errorFormulario" class="error-message" role="alert">{{ errorFormulario }}</div>
 				<div *ngIf="tarjetaSeleccionada" class="tarjeta-info">
 					<p><strong>Bailarín:</strong> {{ tarjetaSeleccionada.bailarin_nombre || (tarjetaSeleccionada.bailarin?.nombres + ' ' + tarjetaSeleccionada.bailarin?.apellidos) }}</p>
 					<p><strong>Año:</strong> {{ tarjetaSeleccionada.anio }}</p>
@@ -430,9 +431,8 @@
 					<textarea
 						class="form-control"
 						formControlName="texto_publicacion"
-						rows="5"
+						rows="3"
 						placeholder="Texto que acompañará la publicación…"
-						[disabled]="(tarjetaSeleccionada?.cargandoPublicacion ?? false)"
 					></textarea>
 					<small *ngIf="formPublicacion.get('texto_publicacion')?.hasError('required') && formPublicacion.get('texto_publicacion')?.touched" class="validation-error">
 						El texto es obligatorio.
