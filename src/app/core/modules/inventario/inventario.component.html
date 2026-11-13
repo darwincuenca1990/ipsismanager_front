@@ -1,1 +1,128 @@
-<p>inventario works!</p>
+<main class="inventory-page">
+  <header class="page-heading">
+    <div><p class="eyebrow">Administración</p><h1>Inventario de trajes</h1><p class="subtitle">Gestiona trajes, prendas, composiciones y adquisiciones.</p></div>
+    <button class="btn btn-primary" type="button" (click)="abrir()" [disabled]="cargando || operando">
+      <i class="pi pi-plus" aria-hidden="true"></i> Nuevo {{ nombreSeccion }}
+    </button>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones de inventario">
+    <button *ngFor="let item of secciones" type="button" role="tab"
+      [attr.aria-selected]="seccion === item.clave" [class.active]="seccion === item.clave"
+      (click)="seccion = item.clave">{{ item.nombre }}</button>
+  </nav>
+
+  <div *ngIf="errorListado" class="alert alert-danger" role="alert">
+    {{ errorListado }} <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargar()">Reintentar carga</button>
+  </div>
+  <p *ngIf="cargando" role="status">Cargando inventario…</p>
+  <section *ngIf="!cargando" class="list-card">
+    <div class="table-scroll" [ngSwitch]="seccion">
+      <table *ngSwitchCase="'tipos'" class="table align-middle mb-0">
+        <thead><tr><th>Nombre</th><th>Variante</th><th>Región / cultura</th><th>Descripción</th><th>Fotografía</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let tipo of tipos">
+            <td>{{ tipo.nombre }}</td><td>{{ tipo.variante }}</td><td>{{ tipo.region_cultura }}</td><td>{{ tipo.descripcion || '—' }}</td>
+            <td><a *ngIf="tipo.fotografia_referencia; else sinArchivo" [href]="tipo.fotografia_referencia" target="_blank" rel="noopener noreferrer">Ver fotografía</a></td>
+            <td>{{ tipo.estado }}</td>
+            <td class="actions"><button type="button" class="btn btn-sm btn-outline-primary" (click)="abrir(tipo)" [disabled]="operando">Editar</button>
+              <button *ngIf="tipo.estado === 'ACTIVO'" type="button" class="btn btn-sm btn-outline-danger" (click)="inactivar(tipo)" [disabled]="operando">Inactivar</button></td>
+          </tr>
+          <tr *ngIf="!tipos.length"><td colspan="7" class="empty-state">No hay tipos de traje registrados.</td></tr>
+        </tbody>
+      </table>
+      <table *ngSwitchCase="'prendas'" class="table align-middle mb-0">
+        <thead><tr><th>Nombre</th><th>Descripción</th><th>Observaciones</th><th>Fotografía</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let prenda of prendas">
+            <td>{{ prenda.nombre_prenda }}</td><td>{{ prenda.descripcion || '—' }}</td><td>{{ prenda.observaciones || '—' }}</td>
+            <td><a *ngIf="prenda.fotografia; else sinArchivo" [href]="prenda.fotografia" target="_blank" rel="noopener noreferrer">Ver fotografía</a></td>
+            <td>{{ prenda.estado }}</td>
+            <td class="actions"><button type="button" class="btn btn-sm btn-outline-primary" (click)="abrir(prenda)" [disabled]="operando">Editar</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="eliminar(prenda)" [disabled]="operando">Eliminar</button></td>
+          </tr>
+          <tr *ngIf="!prendas.length"><td colspan="6" class="empty-state">No hay prendas registradas.</td></tr>
+        </tbody>
+      </table>
+      <table *ngSwitchCase="'composiciones'" class="table align-middle mb-0">
+        <thead><tr><th>Traje</th><th>Prenda</th><th>Cantidad requerida</th><th>Precio unitario</th><th>Observaciones</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let composicion of composiciones">
+            <td>{{ nombreTipo(composicion.tipo_traje) }}</td><td>{{ nombrePrenda(composicion) }}</td><td>{{ composicion.cantidad_requerida }}</td>
+            <td>{{ composicion.precio_unitario ?? '—' }}</td><td>{{ composicion.observaciones || '—' }}</td><td>{{ composicion.estado }}</td>
+            <td class="actions"><button type="button" class="btn btn-sm btn-outline-primary" (click)="abrir(composicion)" [disabled]="operando">Editar</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="eliminar(composicion)" [disabled]="operando">Eliminar</button></td>
+          </tr>
+          <tr *ngIf="!composiciones.length"><td colspan="7" class="empty-state">No hay composiciones registradas.</td></tr>
+        </tbody>
+      </table>
+      <table *ngSwitchCase="'adquisiciones'" class="table align-middle mb-0">
+        <thead><tr><th>Traje</th><th>Fecha</th><th>Cantidad</th><th>Costo unitario</th><th>Costo total</th><th>Proveedor</th><th>Observaciones</th><th>Comprobante</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let adquisicion of adquisiciones">
+            <td>{{ nombreTipo(adquisicion.tipo_traje) }}</td><td>{{ adquisicion.fecha_adquisicion }}</td><td>{{ adquisicion.cantidad_adquirida }}</td>
+            <td>{{ adquisicion.costo_unitario }}</td><td>{{ adquisicion.costo_total }}</td><td>{{ adquisicion.proveedor || '—' }}</td><td>{{ adquisicion.observaciones || '—' }}</td>
+            <td><a *ngIf="adquisicion.comprobante; else sinArchivo" [href]="adquisicion.comprobante" target="_blank" rel="noopener noreferrer">Ver comprobante</a></td>
+            <td><button type="button" class="btn btn-sm btn-outline-primary" (click)="abrir(adquisicion)" [disabled]="operando">Editar</button></td>
+          </tr>
+          <tr *ngIf="!adquisiciones.length"><td colspan="9" class="empty-state">No hay adquisiciones registradas.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<ng-template #sinArchivo>—</ng-template>
+
+<div *ngIf="mostrarFormulario" class="modal-backdrop-custom" (click)="cerrar()">
+  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="inventario-form-titulo" (click)="$event.stopPropagation()">
+    <header class="modal-heading">
+      <h2 id="inventario-form-titulo">{{ editandoId === null ? 'Nuevo' : 'Editar' }} {{ nombreSeccion }}</h2>
+      <button type="button" class="close-modal" (click)="cerrar()" [disabled]="guardando" aria-label="Cerrar">&times;</button>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+      <div class="form-grid">
+        <ng-container *ngIf="seccion === 'tipos'">
+          <label>Nombre *<input class="form-control" formControlName="nombre" maxlength="150"></label>
+          <label>Variante *<input class="form-control" formControlName="variante" maxlength="100"></label>
+          <label>Región / cultura *<input class="form-control" formControlName="region_cultura" maxlength="150"></label>
+        </ng-container>
+        <label *ngIf="seccion === 'prendas'">Nombre de la prenda *<input class="form-control" formControlName="nombre_prenda" maxlength="150"></label>
+        <label *ngIf="seccion === 'tipos' || seccion === 'prendas'" class="wide">Descripción<textarea class="form-control" formControlName="descripcion" rows="2"></textarea></label>
+        <label *ngIf="seccion === 'composiciones' || seccion === 'adquisiciones'">Tipo de traje *
+          <select class="form-select" formControlName="tipo_traje">
+            <option [ngValue]="null">Selecciona un traje</option>
+            <option *ngFor="let tipo of tipos" [ngValue]="tipo.id">{{ tipo.nombre }} - {{ tipo.variante }} ({{ tipo.estado }})</option>
+          </select>
+        </label>
+        <ng-container *ngIf="seccion === 'composiciones'">
+          <label>Prenda *<select class="form-select" formControlName="prenda">
+            <option [ngValue]="null">Selecciona una prenda</option>
+            <option *ngFor="let prenda of prendas" [ngValue]="prenda.id">{{ prenda.nombre_prenda }} ({{ prenda.estado }})</option>
+          </select></label>
+          <label>Cantidad requerida *<input class="form-control" type="number" min="1" step="1" formControlName="cantidad_requerida"></label>
+          <label>Precio unitario<input class="form-control" type="text" inputmode="decimal" formControlName="precio_unitario" placeholder="0.00"></label>
+        </ng-container>
+        <ng-container *ngIf="seccion === 'adquisiciones'">
+          <label>Fecha de adquisición *<input class="form-control" type="date" formControlName="fecha_adquisicion"></label>
+          <label>Cantidad adquirida *<input class="form-control" type="number" min="1" step="1" formControlName="cantidad_adquirida"></label>
+          <label>Costo unitario *<input class="form-control" type="text" inputmode="decimal" formControlName="costo_unitario" placeholder="0.00"></label>
+          <label>Proveedor<input class="form-control" formControlName="proveedor" maxlength="200"></label>
+          <p class="wide hint">El servidor calcula el costo total a partir de la cantidad y el costo unitario.</p>
+        </ng-container>
+        <label *ngIf="seccion !== 'tipos'" class="wide">Observaciones<textarea class="form-control" formControlName="observaciones" rows="2"></textarea></label>
+        <label *ngIf="seccion === 'prendas' || seccion === 'composiciones'">Estado<select class="form-select" formControlName="estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></label>
+        <label *ngIf="seccion !== 'composiciones'" class="wide">
+          {{ seccion === 'adquisiciones' ? 'Comprobante' : 'Fotografía' }}
+          <input class="form-control" type="file" [attr.accept]="seccion === 'adquisiciones' ? null : 'image/*'" (change)="seleccionarArchivo($event)">
+          <small *ngIf="editandoId !== null">Selecciona un archivo solo si deseas reemplazar el actual.</small>
+        </label>
+      </div>
+      <footer class="form-actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+      </footer>
+    </form>
+  </section>
+</div>

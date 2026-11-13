@@ -18,6 +18,12 @@
 	margin-bottom: 1.5rem;
 }
 
+.heading-actions {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
 .view-tabs {
 	display: flex;
 	gap: 0.5rem;

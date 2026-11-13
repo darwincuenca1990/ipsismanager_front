@@ -36,6 +36,16 @@ describe('BailarinesComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('abre la importación y actualiza el listado cuando se crean bailarines', () => {
+    const boton: HTMLButtonElement = fixture.nativeElement.querySelector('.heading-actions .btn-outline-primary');
+    boton.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-importar-bailarines')).toBeTruthy();
+    listar.calls.reset();
+    component.actualizarTrasImportacion();
+    expect(listar).toHaveBeenCalledWith({ elenco: 'todos', estado: 'ACTIVO' });
+  });
+
   it('filtra por elenco y permite volver a todos los elencos', fakeAsync(() => {
     tick();
     fixture.detectChanges();

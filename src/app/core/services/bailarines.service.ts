@@ -82,11 +82,24 @@ export interface CandidatosPlanta {
   data: Bailarin[];
 }
 
+export type DetalleErrorImportacion = string | DetalleErrorImportacion[] | { [campo: string]: DetalleErrorImportacion };
+
+export interface ResultadoImportacionBailarines {
+  creados: { fila: number; id: number }[];
+  errores: { fila: number; errores: DetalleErrorImportacion }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class BailarinesService {
   private readonly apiUrl = constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT;
 
   constructor(private readonly http: HttpClient) {}
+
+  importarExcel(archivo: File): Observable<ResultadoImportacionBailarines> {
+    const formData = new FormData();
+    formData.append('archivo', archivo, archivo.name);
+    return this.http.post<ResultadoImportacionBailarines>(`${this.apiUrl}/bailarines/importar-excel/`, formData);
+  }
 
   listarCandidatosPlanta(): Observable<CandidatosPlanta> {
     return this.http.get<Partial<CandidatosPlanta> | Bailarin[]>(`${this.apiUrl}/bailarines/candidatos-elenco-planta/`).pipe(

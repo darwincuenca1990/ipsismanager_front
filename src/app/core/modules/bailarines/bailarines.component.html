@@ -5,10 +5,15 @@
 			<h1>Bailarines</h1>
 			<p class="subtitle">Consulta y administra la información de los integrantes.</p>
 		</div>
+		<div class="heading-actions">
+		<button class="btn btn-outline-primary" type="button" (click)="mostrarImportacion = true">
+			<i class="pi pi-file-excel" aria-hidden="true"></i> Importar Excel
+		</button>
 		<button class="btn btn-primary add-button" type="button" (click)="nuevo()">
 			<i class="pi pi-plus" aria-hidden="true"></i>
 			Nuevo bailarín
 		</button>
+		</div>
 	</header>
 
 	<nav class="view-tabs" role="tablist">
@@ -203,6 +208,9 @@
 		</nav>
 	</section>
 </main>
+
+<app-importar-bailarines *ngIf="mostrarImportacion" (cerrar)="mostrarImportacion = false"
+	(importados)="actualizarTrasImportacion()"></app-importar-bailarines>
 
 <div *ngIf="mostrarFormulario" class="modal-backdrop-custom" (click)="$event.stopPropagation()">
 	<section class="form-modal" role="dialog" aria-modal="true" [attr.aria-label]="bailarinSeleccionado ? 'Editar bailarín' : 'Crear bailarín'">

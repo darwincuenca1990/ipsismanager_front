@@ -12,11 +12,12 @@ import { Bailarin, BailarinFormValue, BailarinesService, Genero, GrupoFamiliar, 
 import { CommonsService, Elenco } from '../../services/commons.service';
 import { obtenerTodasLasPaginas } from '../../services/paginas-api';
 import { CrearBailarinesComponent } from '../crear-bailarines/crear-bailarines.component';
+import { ImportarBailarinesComponent } from './importar-bailarines.component';
 
 @Component({
   selector: 'app-bailarines',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent, MessageModule, DropdownModule, PaginatorModule],
+  imports: [CommonModule, FormsModule, ProgressSpinnerModule, CrearBailarinesComponent, ImportarBailarinesComponent, MessageModule, DropdownModule, PaginatorModule],
   templateUrl: './bailarines.component.html',
   styleUrl: './bailarines.component.css'
 })
@@ -37,6 +38,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   cargando = false;
   guardando = false;
   mostrarFormulario = false;
+  mostrarImportacion = false;
   error = '';
   errorFormulario = '';
   bailarinSeleccionado: Bailarin | null = null;
@@ -76,6 +78,11 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   seleccionarVista(vista: 'listado' | 'candidatos'): void {
     this.vista = vista;
     if (vista === 'candidatos') this.cargarCandidatos();
+  }
+
+  actualizarTrasImportacion(): void {
+    this.cargarBailarines();
+    if (this.vista === 'candidatos') this.cargarCandidatos();
   }
 
   cargarCandidatos(): void {
