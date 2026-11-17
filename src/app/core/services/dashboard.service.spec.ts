@@ -1,3 +1,4 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { BailarinesService } from './bailarines.service';
@@ -9,6 +10,7 @@ describe('DashboardService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [{ provide: BailarinesService, useValue: { listar: () => of([]) } }]
     });
     service = TestBed.inject(DashboardService);
@@ -26,8 +28,8 @@ describe('DashboardService', () => {
     const inactive = [
       { id: 3, nombres: 'Eva', apellidos: 'Luz', elenco: 'MÁSTER', fecha_nacimiento: '1990-01-02' }
     ];
-    const bailarinesService = TestBed.inject(BailarinesService) as jasmine.SpyObj<BailarinesService>;
-    spyOn(bailarinesService, 'listar').and.callFake(({ estado }) => of(estado === 'ACTIVO' ? active : inactive));
+    const bailarinesService = TestBed.inject(BailarinesService);
+    spyOn(bailarinesService, 'listar').and.callFake((filtros: Parameters<BailarinesService['listar']>[0]) => of(filtros.estado === 'ACTIVO' ? active : inactive));
 
     service.obtenerResumen(new Date(2026, 5, 15)).subscribe(resumen => {
       expect(resumen.bailarines.totalActivos).toBe(2);
