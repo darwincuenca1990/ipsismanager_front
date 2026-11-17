@@ -113,7 +113,7 @@ export class AuthService {
         return;
       }
 
-      this.startSessionTimer();
+      this.silentRefresh();
     }, warningDelay);
     this.sessionExpiryHandle = setTimeout(() => this.logout(), millisecondsToExpire);
   }
@@ -121,7 +121,7 @@ export class AuthService {
   /** Aviso modal con cuenta regresiva; solo aparece si el usuario está inactivo. */
   notifySessionExpirySoon(): void {
     if (!this.isUserInactive()) {
-      this.startSessionTimer();
+      this.silentRefresh();
       return;
     }
 
@@ -157,6 +157,13 @@ export class AuthService {
         this.logout();
       }
     });
+  }
+
+  /** Renueva el token sin interacción; si falla, el timer de expiración cierra la sesión. */
+  private silentRefresh(): void {
+    const refresh = this.getRefreshToken();
+    if (!refresh) return;
+    this.refreshToken(refresh).subscribe({ error: () => undefined });
   }
 
   private renovarSesion(): void {

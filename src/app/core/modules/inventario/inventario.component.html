@@ -85,22 +85,23 @@
       <div class="form-grid">
         <ng-container *ngIf="seccion === 'tipos'">
           <label>Nombre *<input class="form-control" formControlName="nombre" maxlength="150"></label>
-          <label>Variante *<input class="form-control" formControlName="variante" maxlength="100"></label>
+          <label>Variante *
+            <p-dropdown formControlName="variante" [options]="opcionesVariante" optionLabel="label" optionValue="value" placeholder="Seleccione"
+              [autoDisplayFirst]="false" appendTo="body" styleClass="inv-dropdown" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+          </label>
           <label>Región / cultura *<input class="form-control" formControlName="region_cultura" maxlength="150"></label>
         </ng-container>
         <label *ngIf="seccion === 'prendas'">Nombre de la prenda *<input class="form-control" formControlName="nombre_prenda" maxlength="150"></label>
         <label *ngIf="seccion === 'tipos' || seccion === 'prendas'" class="wide">Descripción<textarea class="form-control" formControlName="descripcion" rows="2"></textarea></label>
         <label *ngIf="seccion === 'composiciones' || seccion === 'adquisiciones'">Tipo de traje *
-          <select class="form-select" formControlName="tipo_traje">
-            <option [ngValue]="null">Selecciona un traje</option>
-            <option *ngFor="let tipo of tipos" [ngValue]="tipo.id">{{ tipo.nombre }} - {{ tipo.variante }} ({{ tipo.estado }})</option>
-          </select>
+          <p-dropdown formControlName="tipo_traje" [options]="opcionesTipos" optionLabel="label" optionValue="value" placeholder="Selecciona un traje"
+            [showClear]="true" [autoDisplayFirst]="false" appendTo="body" styleClass="inv-dropdown" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
         </label>
         <ng-container *ngIf="seccion === 'composiciones'">
-          <label>Prenda *<select class="form-select" formControlName="prenda">
-            <option [ngValue]="null">Selecciona una prenda</option>
-            <option *ngFor="let prenda of prendas" [ngValue]="prenda.id">{{ prenda.nombre_prenda }} ({{ prenda.estado }})</option>
-          </select></label>
+          <label>Prenda *
+                      <p-dropdown formControlName="prenda" [options]="opcionesPrendas" optionLabel="label" optionValue="value" placeholder="Selecciona una prenda"
+                        [showClear]="true" [autoDisplayFirst]="false" appendTo="body" styleClass="inv-dropdown" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+                    </label>
           <label>Cantidad requerida *<input class="form-control" type="number" min="1" step="1" formControlName="cantidad_requerida"></label>
           <label>Precio unitario<input class="form-control" type="text" inputmode="decimal" formControlName="precio_unitario" placeholder="0.00"></label>
         </ng-container>
@@ -112,7 +113,10 @@
           <p class="wide hint">El servidor calcula el costo total a partir de la cantidad y el costo unitario.</p>
         </ng-container>
         <label *ngIf="seccion !== 'tipos'" class="wide">Observaciones<textarea class="form-control" formControlName="observaciones" rows="2"></textarea></label>
-        <label *ngIf="seccion === 'prendas' || seccion === 'composiciones'">Estado<select class="form-select" formControlName="estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></label>
+        <label *ngIf="seccion === 'prendas' || seccion === 'composiciones'">Estado
+          <p-dropdown formControlName="estado" [options]="opcionesEstado" optionLabel="label" optionValue="value" [autoDisplayFirst]="false"
+            appendTo="body" styleClass="inv-dropdown" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+        </label>
         <label *ngIf="seccion !== 'composiciones'" class="wide">
           {{ seccion === 'adquisiciones' ? 'Comprobante' : 'Fotografía' }}
           <input class="form-control" type="file" [attr.accept]="seccion === 'adquisiciones' ? null : 'image/*'" (change)="seleccionarArchivo($event)">

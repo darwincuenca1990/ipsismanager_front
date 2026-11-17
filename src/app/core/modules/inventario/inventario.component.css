@@ -23,6 +23,10 @@ th, td { padding: .85rem 1rem; overflow-wrap: anywhere; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .form-grid label { display: grid; gap: .35rem; }
 .wide { grid-column: 1 / -1; }
+.form-grid p-dropdown { display: block; width: 100%; }
+:host ::ng-deep .inv-dropdown { width: 100%; min-height: 0; }
+:host ::ng-deep .inv-dropdown .p-dropdown-label { padding: .35rem .65rem; font-size: .875rem; }
+:host ::ng-deep .inv-dropdown .p-dropdown-trigger { width: 2rem; }
 .form-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.5rem; }
 @media (max-width: 640px) {
   .page-heading { align-items: stretch; flex-direction: column; }

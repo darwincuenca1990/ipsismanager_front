@@ -1,0 +1,46 @@
+.import-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 55%);
+}
+
+.import-modal {
+  width: min(100%, 620px);
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #172b4d;
+}
+
+.import-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.import-heading p, .hint {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.import-heading p { margin: 0 0 0.25rem; }
+.import-heading h2 { margin: 0; font-size: 1.4rem; }
+.close-button { border: 0; background: transparent; font-size: 1.75rem; color: #475569; }
+label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+.hint { margin: 0.5rem 0; }
+.import-error, .error-row { color: #9f1239; }
+.import-error { margin: 0.75rem 0; }
+.import-result { margin-top: 1rem; }
+.import-result h3 { font-size: 1.1rem; }
+.import-result p { margin-bottom: 0.5rem; }
+.error-row { margin-top: 0.5rem; padding: 0.75rem; border-radius: 0.5rem; background: #fff1f2; overflow-wrap: anywhere; }
+.error-row ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+.import-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }

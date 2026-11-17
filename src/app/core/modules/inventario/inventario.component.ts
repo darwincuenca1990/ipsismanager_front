@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DropdownModule } from 'primeng/dropdown';
 import { forkJoin, Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import {
@@ -14,7 +15,7 @@ type Registro = TipoTraje | PrendaTraje | ComposicionTraje | AdquisicionTraje;
 @Component({
   selector: 'app-inventario',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, DropdownModule],
   templateUrl: './inventario.component.html',
   styleUrl: './inventario.component.css'
 })
@@ -28,6 +29,10 @@ export class InventarioComponent implements OnInit, OnDestroy {
   seccion: RecursoInventario = 'tipos';
   tipos: TipoTraje[] = [];
   prendas: PrendaTraje[] = [];
+  opcionesTipos: { label: string; value: number }[] = [];
+  opcionesPrendas: { label: string; value: number }[] = [];
+  readonly opcionesVariante = [{ label: 'Hombre', value: 'Hombre' }, { label: 'Mujer', value: 'Mujer' }];
+  readonly opcionesEstado = [{ label: 'Activo', value: 'ACTIVO' }, { label: 'Inactivo', value: 'INACTIVO' }];
   composiciones: ComposicionTraje[] = [];
   adquisiciones: AdquisicionTraje[] = [];
   cargando = false;
@@ -83,6 +88,8 @@ export class InventarioComponent implements OnInit, OnDestroy {
       next: datos => {
         this.tipos = datos.tipos;
         this.prendas = datos.prendas;
+        this.opcionesTipos = this.tipos.map(t => ({ label: `${t.nombre} - ${t.variante} (${t.estado})`, value: t.id }));
+        this.opcionesPrendas = this.prendas.map(p => ({ label: `${p.nombre_prenda} (${p.estado})`, value: p.id }));
         this.composiciones = datos.composiciones;
         this.adquisiciones = datos.adquisiciones;
         this.cargando = false;
