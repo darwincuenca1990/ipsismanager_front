@@ -41,10 +41,14 @@ describe('ComparativasComponent', () => {
     service.reporteAnual.and.returnValue(of(anual));
     service.obtener.and.returnValue(of(presentacion));
     const bailarines = jasmine.createSpyObj('BailarinesService', ['listar']);
-    bailarines.listar.and.callFake(filtros => of(filtros.estado === 'ACTIVO' ? [
-      { id: 1, nombres: 'Juan', apellidos: 'Paz', genero: 'MASCULINO', elenco: 'PLANTA' },
-      { id: 2, nombres: 'Ana', apellidos: 'Sol', genero: 'FEMENINO', elenco: 'INFANTIL' }
-    ] as Bailarin[] : []));
+    bailarines.listar.and.callFake((filtros: Parameters<BailarinesService['listar']>[0]) => of(
+      filtros.estado === 'ACTIVO'
+        ? [
+          { id: 1, nombres: 'Juan', apellidos: 'Paz', genero: 'MASCULINO', elenco: 'PLANTA' },
+          { id: 2, nombres: 'Ana', apellidos: 'Sol', genero: 'FEMENINO', elenco: 'INFANTIL' }
+        ] as Bailarin[]
+        : []
+    ));
     const coreografias = jasmine.createSpyObj('CoreografiasService', ['listar']);
     coreografias.listar.and.returnValue(of([{ id: 10, nombre: 'Danza', region: 'Sierra', descripcion: '', url_video: '' }]));
     await TestBed.configureTestingModule({

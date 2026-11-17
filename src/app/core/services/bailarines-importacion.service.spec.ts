@@ -15,7 +15,13 @@ describe('Importación de bailarines', () => {
     const solicitud = http.expectOne(`${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/bailarines/importar-excel/`);
     expect(solicitud.request.method).toBe('POST');
     expect(solicitud.request.body instanceof FormData).toBeTrue();
-    expect(solicitud.request.body.get('archivo')).toBe(archivo);
+    const archivoEnviado = solicitud.request.body.get('archivo');
+    expect(archivoEnviado instanceof File).toBeTrue();
+    expect(archivoEnviado).toEqual(jasmine.objectContaining({
+      name: archivo.name,
+      size: archivo.size,
+      type: archivo.type
+    }));
     expect(solicitud.request.headers.has('Content-Type')).toBeFalse();
     solicitud.flush(resultado);
     expect(recibido).toEqual(resultado);

@@ -1,5 +1,5 @@
 import { SimpleChange } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Dropdown } from 'primeng/dropdown';
 import { Bailarin, GrupoFamiliar } from '../../services/bailarines.service';
@@ -41,6 +41,7 @@ describe('CrearBailarinesComponent', () => {
     expect(component.form.controls.inscripcion.controls.estado.value).toBe('INACTIVO');
     dropdown('bailarin-convivencia').onOptionSelect(new Event('click'), component.opcionesConvivencia[0]);
     expect(component.form.controls.vive_con.value).toBe('');
+    flush();
   }));
 
   it('habilita a los padres cuando tienen nombre y copia sus datos al seleccionarlos', fakeAsync(() => {
@@ -61,6 +62,7 @@ describe('CrearBailarinesComponent', () => {
     expect(component.form.controls.grupo_familiar.controls.celular_representante.value).toBe('0999413201');
     dropdown.onOptionSelect(new Event('click'), component.opcionesRepresentante[0]);
     expect(component.form.controls.grupo_familiar.controls.nombres_completos_representante.value).toBe('');
+    flush();
   }));
 
   it('carga valores existentes y conserva la asignación automática de elenco', fakeAsync(() => {

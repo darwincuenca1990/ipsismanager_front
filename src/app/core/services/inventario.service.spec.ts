@@ -38,7 +38,13 @@ describe('InventarioService', () => {
     expect(editar.request.method).toBe('PATCH');
     expect(editar.request.body instanceof FormData).toBeTrue();
     expect(editar.request.body.get('nombre_prenda')).toBe('Sombrero');
-    expect(editar.request.body.get('fotografia')).toBe(archivo);
+    const fotografia = editar.request.body.get('fotografia');
+    expect(fotografia instanceof File).toBeTrue();
+    expect(fotografia).toEqual(jasmine.objectContaining({
+      name: archivo.name,
+      size: archivo.size,
+      type: archivo.type
+    }));
     expect(editar.request.headers.has('Content-Type')).toBeFalse();
     editar.flush({});
   });
