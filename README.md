@@ -34,6 +34,27 @@ rather than running the Angular SSR server.
 
 Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
+## Continuous deployment
+
+The GitHub Actions workflow runs on pushes to `main`. It installs dependencies,
+runs the unit tests and production build, publishes an immutable image to GHCR,
+and deploys it over SSH by updating only the `frontend` service in
+`/opt/ipsismanager/compose.deploy.yml`.
+
+Configure these repository secrets (or secrets in the `production` environment):
+
+- `DROPLET_SSH_PRIVATE_KEY`
+- `DROPLET_SSH_KNOWN_HOSTS`
+- `DROPLET_HOST`
+- `DROPLET_USER`
+
+The optional `DROPLET_SSH_PORT` repository variable defaults to `22`. On the
+Droplet, Compose must have the backend image set as `IMAGE` in its environment
+(for example, in `/opt/ipsismanager/.env`) and configure the `frontend` service
+to use `FRONT_IMAGE`. The workflow leaves `IMAGE` unchanged and runs
+`docker compose up -d --no-deps frontend`; the deployment therefore does not
+restart Django or PostgreSQL.
+
 ## Running end-to-end tests
 
 Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
