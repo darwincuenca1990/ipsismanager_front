@@ -1,0 +1,39 @@
+<div class="import-backdrop" (click)="cerrarDialogo()">
+  <section class="import-modal" role="dialog" aria-modal="true" aria-labelledby="importar-titulo" (click)="$event.stopPropagation()">
+    <header class="import-heading">
+      <div>
+        <p>Administración de bailarines</p>
+        <h2 id="importar-titulo">Importar desde Excel</h2>
+      </div>
+      <button type="button" class="close-button" aria-label="Cerrar" [disabled]="importando" (click)="cerrarDialogo()">&times;</button>
+    </header>
+
+    <form (submit)="$event.preventDefault(); importar()">
+      <label for="archivo-excel">Archivo Excel (.xlsx)</label>
+      <input #archivoInput id="archivo-excel" class="form-control" type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        [disabled]="importando" (change)="seleccionarArchivo($event)">
+      <p class="hint">Selecciona un archivo .xlsx para importar los bailarines.</p>
+      <p *ngIf="error" class="import-error" role="alert">{{ error }}</p>
+      <p *ngIf="importando" role="status">Importando bailarines…</p>
+
+      <section *ngIf="resultado as respuesta" class="import-result" aria-live="polite">
+        <h3>Resultado de la importación</h3>
+        <p><strong>{{ respuesta.creados.length }}</strong> registros creados correctamente.</p>
+        <p><strong>{{ respuesta.errores.length }}</strong> filas con errores.</p>
+        <div *ngFor="let errorFila of errores" class="error-row">
+          <strong>Fila {{ errorFila.fila }}</strong>
+          <ul><li *ngFor="let detalle of errorFila.detalles">{{ detalle }}</li></ul>
+        </div>
+        <p *ngIf="!archivo" class="hint">Para realizar otra importación, selecciona nuevamente un archivo.</p>
+      </section>
+
+      <footer class="import-actions">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="importando" (click)="cerrarDialogo()">Cerrar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!archivo || importando">
+          {{ importando ? 'Importando…' : 'Importar' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

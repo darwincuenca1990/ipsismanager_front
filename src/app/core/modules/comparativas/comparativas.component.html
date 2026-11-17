@@ -1,0 +1,117 @@
+<main class="comparativas-page">
+  <header class="page-heading">
+    <p class="eyebrow">Presentaciones</p>
+    <h1>Comparativas</h1>
+    <p>Compara las presentaciones y sus costos con el año anterior.</p>
+  </header>
+
+  <div class="report-tabs" role="tablist" aria-label="Tipo de reporte">
+    <button type="button" role="tab" id="tab-mensual" [attr.aria-selected]="tab === 'mensual'"
+      aria-controls="reporte-panel" [class.active]="tab === 'mensual'"
+      (click)="cambiarTab('mensual')">Reporte mensual</button>
+    <button type="button" role="tab" id="tab-anual" [attr.aria-selected]="tab === 'anual'"
+      aria-controls="reporte-panel" [class.active]="tab === 'anual'"
+      (click)="cambiarTab('anual')">Reporte anual</button>
+  </div>
+
+  <section class="report-card" id="reporte-panel" role="tabpanel" [attr.aria-labelledby]="tab === 'mensual' ? 'tab-mensual' : 'tab-anual'">
+    <h2>{{ tab === 'mensual' ? 'Reporte mensual' : 'Reporte anual' }}</h2>
+    <form class="report-filters" (ngSubmit)="consultar()">
+      <div class="filter-field" *ngIf="tab === 'mensual'">
+        <label for="reporte-mes">Mes</label>
+        <p-dropdown inputId="reporte-mes" name="mes" [(ngModel)]="mes" [options]="opcionesMeses"
+          optionLabel="label" optionValue="value" appendTo="body" [style]="{width: '100%'}"></p-dropdown>
+      </div>
+      <div class="filter-field" *ngIf="tab === 'mensual'">
+        <label for="reporte-anio-mensual">Año</label>
+        <p-dropdown inputId="reporte-anio-mensual" name="anioMensual" [(ngModel)]="anioMensual" [options]="opcionesAnios"
+          optionLabel="label" optionValue="value" appendTo="body" [style]="{width: '100%'}"></p-dropdown>
+      </div>
+      <div class="filter-field" *ngIf="tab === 'anual'">
+        <label for="reporte-anio-anual">Año</label>
+        <p-dropdown inputId="reporte-anio-anual" name="anioAnual" [(ngModel)]="anioAnual" [options]="opcionesAnios"
+          optionLabel="label" optionValue="value" appendTo="body" [style]="{width: '100%'}"></p-dropdown>
+      </div>
+      <button type="submit" class="btn btn-primary" [disabled]="cargando">Consultar</button>
+    </form>
+
+    <p *ngIf="cargando" role="status">Cargando reporte…</p>
+    <p *ngIf="cargandoDetalle" role="status">Cargando detalle de la presentación…</p>
+    <div *ngIf="errorDetalle" class="report-error" role="alert">
+      <p-message severity="error" [text]="errorDetalle"></p-message>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="reintentarDetalle()">Reintentar</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
+    <div *ngIf="error" class="report-error" role="alert">
+      <p-message severity="error" [text]="error"></p-message>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="consultar()">Reintentar</button>
+    </div>
+
+    <ng-container *ngIf="mensual as reporte">
+      <h3>{{ nombreMes(reporte.mes) }}: {{ reporte.anterior.anio }} y {{ reporte.actual.anio }}</h3>
+      <div class="table-scroll">
+        <table class="table report-table">
+          <thead><tr><th scope="col">Indicador</th><th scope="col">{{ reporte.anterior.anio }}</th><th scope="col">{{ reporte.actual.anio }}</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Presentaciones</th><td>{{ reporte.anterior.cantidad_presentaciones }}</td><td>{{ reporte.actual.cantidad_presentaciones }}</td></tr>
+            <tr><th scope="row">Costo total</th><td>{{ reporte.anterior.costo_total_presentacion }}</td><td>{{ reporte.actual.costo_total_presentacion }}</td></tr>
+            <tr><th scope="row">Transporte</th><td>{{ reporte.anterior.costo_transporte }}</td><td>{{ reporte.actual.costo_transporte }}</td></tr>
+            <tr><th scope="row">Costo neto</th><td>{{ reporte.anterior.costo_neto }}</td><td>{{ reporte.actual.costo_neto }}</td></tr>
+            <tr>
+              <th scope="row">ID de presentaciones</th>
+              <td><ng-container *ngTemplateOutlet="idsPresentaciones; context: { $implicit: reporte.anterior.ids_presentaciones }"></ng-container></td>
+              <td><ng-container *ngTemplateOutlet="idsPresentaciones; context: { $implicit: reporte.actual.ids_presentaciones }"></ng-container></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="anual as reporte">
+      <h3>Comparación {{ reporte.anio_anterior }} y {{ reporte.anio }}</h3>
+      <div class="table-scroll">
+        <table class="table report-table annual-table">
+          <thead>
+            <tr><th scope="col" rowspan="2">Mes</th><th scope="colgroup" colspan="5">{{ reporte.anio_anterior }}</th><th scope="colgroup" colspan="5">{{ reporte.anio }}</th></tr>
+            <tr><th scope="col">Presentaciones</th><th scope="col">Total</th><th scope="col">Transporte</th><th scope="col">Neto</th><th scope="col">ID</th><th scope="col">Presentaciones</th><th scope="col">Total</th><th scope="col">Transporte</th><th scope="col">Neto</th><th scope="col">ID</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mesReporte of reporte.meses">
+              <th scope="row">{{ nombreMes(mesReporte.mes) }}</th>
+              <td>{{ mesReporte.anterior.cantidad_presentaciones }}</td><td>{{ mesReporte.anterior.costo_total_presentacion }}</td><td>{{ mesReporte.anterior.costo_transporte }}</td><td>{{ mesReporte.anterior.costo_neto }}</td><td><ng-container *ngTemplateOutlet="idsPresentaciones; context: { $implicit: mesReporte.anterior.ids_presentaciones }"></ng-container></td>
+              <td>{{ mesReporte.actual.cantidad_presentaciones }}</td><td>{{ mesReporte.actual.costo_total_presentacion }}</td><td>{{ mesReporte.actual.costo_transporte }}</td><td>{{ mesReporte.actual.costo_neto }}</td><td><ng-container *ngTemplateOutlet="idsPresentaciones; context: { $implicit: mesReporte.actual.ids_presentaciones }"></ng-container></td>
+            </tr>
+            <tr *ngIf="!reporte.meses.length"><td colspan="11">No hay meses disponibles para este reporte.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <section *ngIf="opcionesGrafico" class="chart-section" aria-label="Gráfico comparativo">
+      <div class="chart-heading">
+        <h3>{{ tab === 'mensual' ? 'Comparación mensual' : 'Comparación anual' }}</h3>
+        <div class="filter-field">
+          <label for="reporte-metrica">Indicador del gráfico</label>
+          <p-dropdown inputId="reporte-metrica" [(ngModel)]="metrica" [options]="metricas" optionLabel="label" optionValue="value"
+            (ngModelChange)="actualizarGrafico()" appendTo="body" [style]="{width: '100%'}"></p-dropdown>
+        </div>
+      </div>
+      <p *ngIf="tab === 'anual'">El gráfico muestra únicamente los meses incluidos en la respuesta del servidor.</p>
+      <p-message *ngIf="errorGrafico" severity="error" [text]="errorGrafico"></p-message>
+      <app-grafico-comparativa [opciones]="opcionesGrafico" [etiqueta]="tab === 'mensual' ? 'Gráfico de líneas comparativo mensual' : 'Gráfico de barras comparativo anual'"
+        (errorGrafico)="errorGrafico = 'No se pudo mostrar el gráfico. Los datos permanecen disponibles en la tabla.'"></app-grafico-comparativa>
+    </section>
+  </section>
+</main>
+
+<app-detalle-presentacion *ngIf="detalle as presentacion" [presentacion]="presentacion"
+  [bailarines]="bailarinesDetalle" [coreografias]="coreografiasDetalle"
+  (cerrar)="cerrarDetalle()"></app-detalle-presentacion>
+
+<ng-template #idsPresentaciones let-ids>
+  <ng-container *ngFor="let id of ids; let ultima = last">
+    <button type="button" class="id-link" (click)="verDetalle(id)" [disabled]="cargandoDetalle"
+      [attr.aria-label]="'Ver detalle de la presentación ' + id">{{ id }}</button>{{ ultima ? '' : ', ' }}
+  </ng-container>
+  <span *ngIf="!ids.length">—</span>
+</ng-template>

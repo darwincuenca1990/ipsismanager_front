@@ -1,3 +1,69 @@
 import { Routes } from '@angular/router';
+import { LoginComponent } from './core/modules/login/login.component';
+import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
+import { AuthGuard } from './core/services/auth.guard';
+import { DashboardComponent } from './core/modules/dashboard/dashboard.component';
+import { BailarinesComponent } from './core/modules/bailarines/bailarines.component';
+import { CumpleanosComponent } from './core/modules/cumpleanos/cumpleanos.component';
+import { PresentacionesComponent } from './core/modules/presentaciones/presentaciones.component';
+import { CoreografiasComponent } from './core/modules/coreografias/coreografias.component';
+import { ComparativasComponent } from './core/modules/comparativas/comparativas.component';
+import { InventarioComponent } from './core/modules/inventario/inventario.component';
 
-export const routes: Routes = [];
+
+export const routes: Routes = [
+    { path: '', redirectTo: 'login', pathMatch: 'full' },
+    { path: 'login', component: LoginComponent },
+    {
+        path: '',
+        component: MainLayoutComponent,
+        children: [
+            {
+                path: 'dashboard',
+                component: DashboardComponent,
+                data: { breadcrumb: 'Home' },
+                canActivate: [AuthGuard],
+            },
+            {
+            path: 'bailarines',
+                component: BailarinesComponent,
+                data: { breadcrumb: 'Bailarines' },
+                canActivate: [AuthGuard],
+            },     
+            {
+            path: 'cumpleanos',
+                component: CumpleanosComponent,
+                data: {
+                    breadcrumb: 'Cumpleaños',
+                    breadcrumbTabs: { afiches: 'Gestión Afiches', plantillas: 'Plantillas', planificacion: 'Planificación Cumpleaños' },
+                    breadcrumbDefaultTab: 'afiches'
+                },
+                canActivate: [AuthGuard],
+            },   
+            {
+            path: 'presentaciones',
+                component: PresentacionesComponent,
+                data: { breadcrumb: 'Presentaciones' },
+                canActivate: [AuthGuard],
+            },
+            {
+                path: 'coreografias',
+                component: CoreografiasComponent,
+                data: { breadcrumb: 'Coreografías' },
+                canActivate: [AuthGuard],
+            },
+            {
+                path: 'comparativas',
+                component: ComparativasComponent,
+                data: { breadcrumb: 'Comparativas' },
+                canActivate: [AuthGuard],
+            },           
+            {
+                path: 'inventario',
+                component: InventarioComponent,
+                data: { breadcrumb: 'Inventario' },
+                canActivate: [AuthGuard],
+            },                         
+        ]
+    }
+];

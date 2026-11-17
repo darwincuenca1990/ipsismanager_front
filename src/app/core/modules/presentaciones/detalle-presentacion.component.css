@@ -1,0 +1,22 @@
+.modal-backdrop-custom { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 1rem; background: rgb(15 23 42 / 55%); }
+.form-modal { width: min(100%, 1100px); max-height: 92vh; overflow-y: auto; padding: 1.5rem; border-radius: 1rem; background: #f8fafc; color: #172b4d; }
+.modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.modal-heading h2 { font-size: 1.2rem; }
+h3 { margin: 1rem 0; font-size: 1.05rem; font-weight: 700; }
+.close-modal { width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%; color: #475569; background: #e9eef5; font-size: 1.5rem; }
+.detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.detail-grid dt { color: #64748b; font-size: .85rem; }
+.detail-grid dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
+.assignment-section { margin-top: 1.5rem; }
+.table-scroll { overflow-x: auto; }
+table { min-width: 700px; }
+th { color: #64748b; background: #f8fafc; font-size: .75rem; text-transform: uppercase; }
+.assignment-table th, .assignment-table td { min-width: 130px; }
+.assignment-table th:first-child { min-width: 280px; }
+.assignment-table .elenco-separator th { background: #e5eefb; color: #1d4ed8; }
+.empty-state { padding: 2rem; text-align: center; color: #718096; }
+.form-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
+@media (max-width: 700px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .form-modal { padding: 1rem; }
+}

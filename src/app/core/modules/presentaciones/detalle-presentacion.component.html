@@ -1,0 +1,45 @@
+<div class="modal-backdrop-custom">
+  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="detalle-presentacion-titulo">
+    <header class="modal-heading">
+      <h2 id="detalle-presentacion-titulo">Detalle de la presentación</h2>
+      <button type="button" class="close-modal" (click)="cerrar.emit()" aria-label="Cerrar detalle">&times;</button>
+    </header>
+    <h3>Datos de la presentación</h3>
+    <dl class="detail-grid">
+      <div><dt>Fecha</dt><dd>{{ presentacion.fecha }}</dd></div>
+      <div><dt>Hora de presentación</dt><dd>{{ presentacion.hora_presentacion }}</dd></div>
+      <div><dt>Lugar</dt><dd>{{ presentacion.lugar }}</dd></div>
+      <div><dt>Persona a cargo</dt><dd>{{ nombreBailarin(presentacion.persona_cargo) }}</dd></div>
+      <div><dt>Costo total</dt><dd>{{ presentacion.costo_total_presentacion }}</dd></div>
+      <div><dt>Costo de transporte</dt><dd>{{ presentacion.costo_transporte }}</dd></div>
+      <div><dt>Costo neto</dt><dd>{{ presentacion.costo_neto }}</dd></div>
+      <div><dt>Nombre del transporte</dt><dd>{{ presentacion.nombre_transporte }}</dd></div>
+      <div><dt>Tipo de presentación</dt><dd>{{ presentacion.tipo_presentacion }}</dd></div>
+      <div><dt>Elencos</dt><dd>{{ presentacion.elencos.join(', ') || '—' }}</dd></div>
+      <div><dt>Coreografías</dt><dd><span *ngFor="let coreografia of coreografiasDetalle; let ultima = last">{{ coreografia.nombre }}{{ ultima ? '' : ', ' }}</span><span *ngIf="!coreografiasDetalle.length">—</span></dd></div>
+    </dl>
+    <section class="assignment-section">
+      <h3>Bailarines y coreografías</h3>
+      <div class="table-scroll">
+        <table class="table assignment-table align-middle">
+          <thead><tr><th scope="col">Bailarín</th><th scope="col">Género</th><th scope="col">Elenco</th><th *ngFor="let coreografia of coreografiasDetalle" scope="col">{{ coreografia.nombre }}</th></tr></thead>
+          <tbody *ngFor="let grupo of gruposBitacoraDetalle; trackBy: identificarGrupo">
+            <tr *ngIf="agruparDetallePorElenco" class="elenco-separator">
+              <th scope="rowgroup" [attr.colspan]="3 + coreografiasDetalle.length">Elenco: {{ grupo.elenco }}</th>
+            </tr>
+            <tr *ngFor="let registro of grupo.elementos">
+              <th scope="row">{{ nombreBailarin(registro.bailarin) }}</th>
+              <td>{{ bailarinDetalle(registro.bailarin)?.genero || '—' }}</td>
+              <td>{{ bailarinDetalle(registro.bailarin)?.elenco || '—' }}</td>
+              <td *ngFor="let coreografia of coreografiasDetalle">{{ registro.coreografias.includes(coreografia.id) ? 'Sí' : 'No' }}</td>
+            </tr>
+          </tbody>
+          <tbody *ngIf="!presentacion.bitacora.length">
+            <tr><td [attr.colspan]="3 + coreografiasDetalle.length" class="empty-state">No hay bailarines registrados en esta presentación.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="form-actions"><button type="button" class="btn btn-outline-secondary" (click)="cerrar.emit()">Cerrar</button></div>
+  </section>
+</div>

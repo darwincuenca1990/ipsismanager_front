@@ -1,0 +1,107 @@
+<main class="choreographies-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Coreografías</h1>
+      <p class="subtitle">Consulta y administra las coreografías de la agrupación.</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="nuevo()" [disabled]="eliminando">
+      <i class="pi pi-plus" aria-hidden="true"></i> Nueva coreografía
+    </button>
+  </header>
+
+  <section class="list-card" aria-label="Listado de coreografías">
+    <div class="list-heading">
+      <h2>Listado</h2>
+      <span>{{ total }} {{ total === 1 ? 'registro' : 'registros' }}</span>
+    </div>
+    <div *ngIf="errorListado" class="alert alert-danger m-3" role="alert">
+      {{ errorListado }}
+      <button *ngIf="!cargando" type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="cargar(enlaceSolicitado)">Reintentar listado</button>
+    </div>
+    <div class="table-scroll">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col">Región</th>
+            <th scope="col">Descripción</th>
+            <th scope="col">Video</th>
+            <th scope="col" class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="cargando">
+            <td colspan="5" class="empty-state" aria-live="polite">Cargando coreografías…</td>
+          </tr>
+          <ng-container *ngIf="!cargando">
+            <tr *ngFor="let coreografia of coreografias">
+              <td class="fw-semibold">{{ coreografia.nombre }}</td>
+              <td>{{ coreografia.region }}</td>
+              <td class="description">{{ coreografia.descripcion }}</td>
+              <td>
+                <a *ngIf="tieneVideoValido(coreografia.url_video); else sinVideo" [href]="coreografia.url_video" target="_blank" rel="noopener noreferrer">
+                  Ver video <i class="pi pi-external-link" aria-hidden="true"></i>
+                </a>
+                <ng-template #sinVideo><span class="text-muted">No disponible</span></ng-template>
+              </td>
+              <td class="text-end actions">
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="editar(coreografia)" [disabled]="eliminando" [attr.aria-label]="'Editar ' + coreografia.nombre">
+                  <i class="pi pi-pencil" aria-hidden="true"></i> Editar
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="eliminar(coreografia)" [disabled]="eliminando" [attr.aria-label]="'Eliminar ' + coreografia.nombre">
+                  <i class="pi pi-trash" aria-hidden="true"></i> Eliminar
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="coreografias.length === 0 && !errorListado">
+              <td colspan="5" class="empty-state">Todavía no hay coreografías registradas.</td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+    <nav *ngIf="anterior || siguiente" class="pagination-controls" aria-label="Paginación de coreografías">
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="!anterior || cargando || eliminando" (click)="cargar(anterior || undefined)">Anterior</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="!siguiente || cargando || eliminando" (click)="cargar(siguiente || undefined)">Siguiente</button>
+    </nav>
+  </section>
+</main>
+
+<div *ngIf="mostrarFormulario" class="modal-backdrop-custom">
+  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="form-title">
+    <header class="modal-heading">
+      <h2 id="form-title">{{ seleccionada ? 'Editar coreografía' : 'Nueva coreografía' }}</h2>
+      <button type="button" class="close-modal" (click)="cerrarFormulario()" [disabled]="guardando" aria-label="Cerrar formulario">&times;</button>
+    </header>
+    <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <div class="form-grid">
+        <label>
+          <span>Nombre *</span>
+          <input class="form-control" formControlName="nombre" maxlength="150" required>
+          <small *ngIf="enviado && form.controls.nombre.invalid" class="field-error">Ingrese un nombre de hasta 150 caracteres.</small>
+        </label>
+        <label>
+          <span>Región *</span>
+          <input class="form-control" formControlName="region" maxlength="150" required>
+          <small *ngIf="enviado && form.controls.region.invalid" class="field-error">Ingrese una región de hasta 150 caracteres.</small>
+        </label>
+        <label class="wide">
+          <span>Descripción *</span>
+          <textarea class="form-control" formControlName="descripcion" rows="4" required></textarea>
+          <small *ngIf="enviado && form.controls.descripcion.invalid" class="field-error">Ingrese una descripción.</small>
+        </label>
+        <label class="wide">
+          <span>URL del video *</span>
+          <input class="form-control" type="url" formControlName="url_video" maxlength="500" placeholder="https://..." required>
+          <small *ngIf="enviado && form.controls.url_video.invalid" class="field-error">Ingrese una URL HTTP o HTTPS válida de hasta 500 caracteres.</small>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrarFormulario()" [disabled]="guardando">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando">{{ guardando ? 'Guardando…' : (seleccionada ? 'Guardar cambios' : 'Crear coreografía') }}</button>
+      </div>
+    </form>
+  </section>
+</div>
