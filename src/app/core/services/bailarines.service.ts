@@ -164,6 +164,17 @@ export class BailarinesService {
   }
 
   obtenerOpcionesParametro(nombre: string): Observable<OpcionParametro[]> {
+    return this.obtenerOpcionesParametroConValor(nombre, valor => valor.toLocaleUpperCase('es'));
+  }
+
+  obtenerClasesPresentacion(): Observable<OpcionParametro[]> {
+    return this.obtenerOpcionesParametroConValor('CLASE_PRESENTACION', valor => valor);
+  }
+
+  private obtenerOpcionesParametroConValor(
+    nombre: string,
+    transformarValor: (valor: string) => string
+  ): Observable<OpcionParametro[]> {
     return this.http.get<ParametroResponse>(
       `${this.apiUrl}/parametros/por-nombre/${nombre}`
     ).pipe(
@@ -179,7 +190,7 @@ export class BailarinesService {
             label: label.split(/\s+/)
               .map(palabra => `${palabra.charAt(0).toLocaleUpperCase('es')}${palabra.slice(1).toLocaleLowerCase('es')}`)
               .join(' '),
-            value: label.toLocaleUpperCase('es')
+            value: transformarValor(label)
           }));
         if (opciones.length === 0) {
           throw new Error(`El parámetro ${nombre} no tiene valores configurados.`);

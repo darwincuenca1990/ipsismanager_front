@@ -220,4 +220,45 @@ describe('BailarinesService', () => {
       { label: 'Festival Ipsis', value: 'FESTIVAL IPSIS' }
     ]);
   });
+
+  it('obtiene las clases de presentación activas conservando su valor original', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerClasesPresentacion().subscribe(resultado => opciones = resultado);
+
+    const request = http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/CLASE_PRESENTACION`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 16,
+      nombre: 'CLASE_PRESENTACION',
+      valor: 'Pagada, Colaboración, Festivales, Concursos',
+      estado: 'ACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([
+      { label: 'Pagada', value: 'Pagada' },
+      { label: 'Colaboración', value: 'Colaboración' },
+      { label: 'Festivales', value: 'Festivales' },
+      { label: 'Concursos', value: 'Concursos' }
+    ]);
+  });
+
+  it('no asigna clases de presentación cuando el parámetro está inactivo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerClasesPresentacion().subscribe(resultado => opciones = resultado);
+
+    http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/CLASE_PRESENTACION`
+    ).flush({
+      id: 16,
+      nombre: 'CLASE_PRESENTACION',
+      valor: 'Pagada, Colaboración',
+      estado: 'INACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([]);
+  });
 });

@@ -44,7 +44,7 @@
           <!-- Logo + logout -->
           <div class="mt-0 position-relative">
             <img class="logo-image" src="assets/images/IPSIS_banner.png" alt="IPSIS">
-            <button pButton label="Cerrar sesión" icon="pi pi-sign-out" class="p-button-danger p-button-sm small-text position-absolute top-0 end-0 m-2" (click)="logout()"></button>
+            <button pButton label="Cerrar sesión" icon="pi pi-sign-out" class="p-button-danger p-button-sm small-text position-absolute top-0 end-0 m-2 logout-button" (click)="logout()"></button>
           </div>
           <div class="breadcrumb-container mx-auto small-breadcrumb" style="max-height: 200px;">
           <p-breadcrumb  [model]="breadcrumbItems" [home]="{ icon: 'pi pi-home', routerLink: '/dashboard' }"></p-breadcrumb>

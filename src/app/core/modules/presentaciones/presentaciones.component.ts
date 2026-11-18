@@ -68,7 +68,9 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   private suscripcionRuta?: Subscription;
   opcionesElenco: OpcionElenco[] = [];
   opcionesTipoPresentacion: { label: string; value: TipoPresentacion }[] = [];
+  opcionesClasePresentacion: OpcionParametro[] = [];
   opcionesPersonaCargo: { label: string; value: string }[] = [];
+  ordenFecha: 'asc' | 'desc' | null = null;
   readonly form = this.fb.nonNullable.group({
     fecha: ['', Validators.required],
     lugar: ['', [textoRequerido, Validators.maxLength(250)]],
@@ -77,7 +79,8 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     costo_total_presentacion: ['', [Validators.required, Validators.pattern(/^\d{1,10}(\.\d{1,2})?$/)]],
     costo_transporte: ['', [Validators.required, Validators.pattern(/^\d{1,10}(\.\d{1,2})?$/)]],
     nombre_transporte: ['', [textoRequerido, Validators.maxLength(200)]],
-    tipo_presentacion: this.fb.nonNullable.control<TipoPresentacion | ''>('', Validators.required)
+    tipo_presentacion: this.fb.nonNullable.control<TipoPresentacion | ''>('', Validators.required),
+    clase_presentacion: ['', Validators.required]
   });
 
   constructor(
@@ -122,14 +125,24 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
 
   get presentacionesFiltradas(): Presentacion[] {
     const { meses, anios } = this.filtrosAplicados;
-    return this.presentaciones.filter(presentacion => {
+    const filtradas = this.presentaciones.filter(presentacion => {
       const [anio, mes] = presentacion.fecha.split('-').map(Number);
       return (!meses.length || meses.includes(mes)) && (!anios.length || anios.includes(anio));
+    });
+    if (!this.ordenFecha) return filtradas;
+    return filtradas.sort((a, b) => {
+      const orden = a.fecha.localeCompare(b.fecha);
+      return this.ordenFecha === 'asc' ? orden : -orden;
     });
   }
 
   get presentacionesPagina(): Presentacion[] {
     return this.presentacionesFiltradas.slice(this.primeraFila, this.primeraFila + this.filasPorPagina);
+  }
+
+  alternarOrdenFecha(): void {
+    this.ordenFecha = this.ordenFecha === 'asc' ? 'desc' : 'asc';
+    this.primeraFila = 0;
   }
 
   cambiarPagina(evento: PaginatorState): void {
@@ -177,21 +190,23 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
       elencos: this.bailarinesService.obtenerElencosPresentacion(),
       tiposPresentacion: this.bailarinesService.obtenerOpcionesParametro('TIPOS_PRESENTACION').pipe(
         map(opciones => this.mapearTiposPresentacion(opciones))
-      )
+      ),
+      clasesPresentacion: this.bailarinesService.obtenerClasesPresentacion()
     }).subscribe({
-      next: ({ catalogos, elencos, tiposPresentacion }) => {
+      next: ({ catalogos, elencos, tiposPresentacion, clasesPresentacion }) => {
         this.activos = new Set(catalogos.activos.map(b => b.id));
         this.bailarines = combinarBailarines(catalogos.inactivos, catalogos.activos);
         this.coreografias = catalogos.coreografias;
         this.opcionesElenco = elencos;
         this.opcionesTipoPresentacion = tiposPresentacion;
-        if (elencos.length === 0 && tiposPresentacion.length === 0) {
-          this.errorCatalogos = 'No hay elencos ni tipos de presentación activos configurados.';
-        } else if (elencos.length === 0) {
-          this.errorCatalogos = 'No hay elencos de presentación activos configurados.';
-        } else if (tiposPresentacion.length === 0) {
-          this.errorCatalogos = 'No hay tipos de presentación activos configurados.';
-        } else if (!tiposPresentacion.some(opcion => opcion.value === this.form.controls.tipo_presentacion.value)) {
+        this.opcionesClasePresentacion = clasesPresentacion;
+        this.errorCatalogos = [
+          elencos.length === 0 ? 'No hay elencos de presentación activos configurados.' : '',
+          tiposPresentacion.length === 0 ? 'No hay tipos de presentación activos configurados.' : '',
+          clasesPresentacion.length === 0 ? 'No hay clases de presentación activas configuradas.' : ''
+        ].filter(Boolean).join(' ');
+        if (tiposPresentacion.length > 0 &&
+          !tiposPresentacion.some(opcion => opcion.value === this.form.controls.tipo_presentacion.value)) {
           this.form.controls.tipo_presentacion.setValue(this.tipoPresentacionPredeterminado());
         }
         this.actualizarOpcionesPersonaCargo();
@@ -291,7 +306,10 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     this.busquedaBailarin = '';
     this.seleccionada = null;
     this.actualizarOpcionesPersonaCargo();
-    this.form.reset({ tipo_presentacion: this.tipoPresentacionPredeterminado() });
+    this.form.reset({
+      tipo_presentacion: this.tipoPresentacionPredeterminado(),
+      clase_presentacion: ''
+    });
     this.elencos = [];
     this.coreografiasSeleccionadas.clear();
     this.idsCoreografiasSeleccionadas = [];
@@ -347,7 +365,8 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
           costo_total_presentacion: String(presentacion.costo_total_presentacion),
           costo_transporte: String(presentacion.costo_transporte),
           nombre_transporte: presentacion.nombre_transporte,
-          tipo_presentacion: presentacion.tipo_presentacion
+          tipo_presentacion: presentacion.tipo_presentacion,
+          clase_presentacion: presentacion.clase_presentacion
         });
         this.elencos = [...presentacion.elencos];
         this.asignaciones = new Map(presentacion.bitacora.map(item => [item.bailarin, new Set(item.coreografias)]));
@@ -434,11 +453,22 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
       this.errorFormulario = 'No hay elencos de presentación activos configurados.';
       return;
     }
+    if (this.opcionesClasePresentacion.length === 0) {
+      this.errorFormulario = 'No hay clases de presentación activas configuradas.';
+      return;
+    }
     const tipoPresentacion = this.opcionesTipoPresentacion.find(
       opcion => opcion.value === this.form.controls.tipo_presentacion.value
     )?.value;
     if (!tipoPresentacion) {
       this.errorFormulario = 'Seleccione un tipo de presentación activo.';
+      return;
+    }
+    const clasePresentacion = this.opcionesClasePresentacion.find(
+      opcion => opcion.value === this.form.controls.clase_presentacion.value
+    )?.value;
+    if (!clasePresentacion) {
+      this.errorFormulario = 'Seleccione una clase de presentación activa.';
       return;
     }
     if (this.elencos.some(elenco => !this.opcionesElenco.some(opcion => opcion.value === elenco))) {
@@ -470,6 +500,7 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     const payload: PresentacionDatos = {
       ...datos,
       tipo_presentacion: tipoPresentacion,
+      clase_presentacion: clasePresentacion,
       lugar: datos.lugar.trim(),
       nombre_transporte: datos.nombre_transporte.trim(),
       persona_cargo: persona,

@@ -30,6 +30,7 @@ describe('ComparativasComponent', () => {
     id: 2, fecha: '2026-10-01', hora_presentacion: '10:00', lugar: 'Loja',
     persona_cargo: 1, costo_total_presentacion: '150.00', costo_transporte: '30.00',
     costo_neto: '120.00', nombre_transporte: 'Bus', tipo_presentacion: 'FESTIVALIPSIS',
+    clase_presentacion: 'Festivales',
     elencos: ['INFANTIL', 'PLANTA'],
     bitacora: [{ bailarin: 1, coreografias: [10] }, { bailarin: 2, coreografias: [10] }]
   };
