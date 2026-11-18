@@ -4,7 +4,7 @@
     <button type="button" class="btn btn-primary" (click)="nuevo()" [disabled]="cargandoCatalogos || !!errorCatalogos"><i class="pi pi-plus" aria-hidden="true"></i> Nueva presentación</button>
   </header>
 
-  <div *ngIf="cargandoCatalogos" class="alert alert-info" role="status">Cargando bailarines y coreografías…</div>
+  <div *ngIf="cargandoCatalogos" class="alert alert-info" role="status">Cargando bailarines, coreografías y elencos…</div>
   <div *ngIf="errorCatalogos" class="alert alert-danger" role="alert">
     {{ errorCatalogos }} <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarCatalogos()">Reintentar</button>
   </div>
@@ -34,7 +34,16 @@
     <div *ngIf="errorListado" class="alert alert-danger" role="alert">{{ errorListado }}</div>
     <div class="table-scroll">
       <table class="table align-middle">
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Responsable</th><th>Tipo</th><th>Elencos</th><th>Neto</th><th>Acciones</th></tr></thead>
+        <thead><tr>
+          <th scope="col" [attr.aria-sort]="ordenFecha === 'asc' ? 'ascending' : ordenFecha === 'desc' ? 'descending' : 'none'">
+            <button type="button" class="date-sort-button"
+              [attr.aria-label]="ordenFecha === 'asc' ? 'Ordenar fecha descendente' : 'Ordenar fecha ascendente'"
+              (click)="alternarOrdenFecha()">
+              Fecha <span aria-hidden="true">{{ ordenFecha === 'asc' ? '↑' : ordenFecha === 'desc' ? '↓' : '↕' }}</span>
+            </button>
+          </th>
+          <th>Hora</th><th>Lugar</th><th>Responsable</th><th>Tipo</th><th>Elencos</th><th>Neto</th><th>Acciones</th>
+        </tr></thead>
         <tbody>
           <tr *ngIf="cargando"><td colspan="8" class="empty-state">Cargando presentaciones…</td></tr>
           <ng-container *ngIf="!cargando">
@@ -62,6 +71,7 @@
 <ng-container *ngIf="detalle as presentacion">
   <app-detalle-presentacion *ngIf="!cargandoCatalogos && !errorCatalogos"
     [presentacion]="presentacion" [bailarines]="bailarines" [coreografias]="coreografias"
+    [opcionesElenco]="opcionesElenco"
     (cerrar)="cerrarDetalle()"></app-detalle-presentacion>
 </ng-container>
 
@@ -78,6 +88,13 @@
       <div class="form-grid">
         <label>Fecha *<input type="date" class="form-control" formControlName="fecha" required></label>
         <label>Hora de presentación *<input type="time" class="form-control" formControlName="hora_presentacion" required></label>
+        <div class="select-field">
+          <label for="clase-presentacion">Clase Presentación *</label>
+          <p-dropdown id="selector-clase-presentacion" inputId="clase-presentacion" formControlName="clase_presentacion"
+            [options]="opcionesClasePresentacion" optionLabel="label" optionValue="value"
+            placeholder="Seleccione una clase" emptyMessage="No hay clases de presentación activas."
+            appendTo="body" panelStyleClass="presentation-form-select-panel" scrollHeight="200px" [overlayOptions]="{baseZIndex: 1200}" [style]="{width: '100%'}"></p-dropdown>
+        </div>
         <label>Lugar *<input class="form-control" maxlength="250" formControlName="lugar" required></label>
         <div class="select-field">
           <label for="persona-cargo">Persona a cargo *</label>

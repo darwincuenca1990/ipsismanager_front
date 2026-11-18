@@ -21,6 +21,7 @@ export interface PresentacionDatos {
   costo_transporte: string;
   nombre_transporte: string;
   tipo_presentacion: TipoPresentacion;
+  clase_presentacion: string;
   elencos: Elenco[];
   bitacora: BitacoraPresentacion[];
 }

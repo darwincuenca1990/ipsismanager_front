@@ -20,8 +20,30 @@ describe('BailarinesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BailarinesComponent, NoopAnimationsModule],
       providers: [
-        { provide: BailarinesService, useValue: { listar } },
-        { provide: CommonsService, useValue: { opcionesElenco: [{ value: 'PLANTA', label: 'Planta' }] } },
+        {
+          provide: BailarinesService,
+          useValue: {
+            listar,
+            obtenerGeneros: () => of([
+              { label: 'Femenino', value: 'FEMENINO' },
+              { label: 'Masculino', value: 'MASCULINO' }
+            ]),
+            obtenerElencos: () => of([
+              { label: 'Planta', value: 'PLANTA' },
+              { label: 'Infantil', value: 'INFANTIL' }
+            ]),
+            obtenerOpcionesConvivencia: () => of([
+              { label: 'Padres', value: 'PADRES' },
+              { label: 'Familiares', value: 'FAMILIARES' },
+              { label: 'Otros', value: 'OTROS' }
+            ]),
+            obtenerEstados: () => of([
+              { label: 'Activo', value: 'ACTIVO' },
+              { label: 'Inactivo', value: 'INACTIVO' }
+            ])
+          }
+        },
+        { provide: CommonsService, useValue: { calcularAntiguedad: () => '' } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } }
       ]
     })
@@ -46,12 +68,30 @@ describe('BailarinesComponent', () => {
     expect(listar).toHaveBeenCalledWith({ elenco: 'todos', estado: 'ACTIVO' });
   });
 
+  it('bloquea la creación mientras falte un catálogo de parámetros activo', () => {
+    const boton: HTMLButtonElement = fixture.nativeElement.querySelector('.add-button');
+    const eliminarCatalogo = [
+      () => component.opcionesGenero = [],
+      () => component.opcionesElenco = [],
+      () => component.opcionesConvivencia = [],
+      () => component.opcionesEstado = []
+    ];
+
+    eliminarCatalogo.forEach(eliminar => {
+      eliminar();
+      fixture.detectChanges();
+      expect(boton.disabled).toBeTrue();
+      component.nuevo();
+      expect(component.mostrarFormulario).toBeFalse();
+    });
+  });
+
   it('filtra por elenco y permite volver a todos los elencos', fakeAsync(() => {
     tick();
     fixture.detectChanges();
     const dropdown = fixture.debugElement.query(By.css('p-dropdown[inputId="filtro-elenco"]')).componentInstance as Dropdown;
     expect(dropdown.value).toBe('TODOS');
-    expect(dropdown.options?.map(opcion => opcion.value)).toEqual(['TODOS', 'PLANTA']);
+    expect(dropdown.options?.map(opcion => opcion.value)).toEqual(['TODOS', 'PLANTA', 'INFANTIL']);
 
     dropdown.onOptionSelect(new Event('click'), component.opcionesFiltroElenco[1]);
     tick();

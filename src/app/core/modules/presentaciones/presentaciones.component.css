@@ -15,6 +15,8 @@ h3 { margin: 1rem 0; font-size: 1.05rem; font-weight: 700; }
 .table-scroll { overflow-x: auto; }
 table { min-width: 700px; }
 th { color: #64748b; background: #f8fafc; font-size: .75rem; text-transform: uppercase; }
+.date-sort-button { display: inline-flex; align-items: center; gap: .3rem; padding: 0; border: 0; color: inherit; background: transparent; font: inherit; text-transform: inherit; cursor: pointer; }
+.date-sort-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .empty-state { padding: 2rem; text-align: center; color: #718096; }
 .form-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
 .list-actions { white-space: nowrap; }

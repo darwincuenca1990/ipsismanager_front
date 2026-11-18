@@ -208,6 +208,10 @@
   font-size: 0.8rem !important;
 }
 
+:host ::ng-deep .logout-button {
+  border-radius: 9999px;
+}
+
 :host ::ng-deep .p-breadcrumb {
   font-size: 0.8rem; /* o usa small, 12px, etc. */
 }

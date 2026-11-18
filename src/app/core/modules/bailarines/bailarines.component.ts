@@ -8,7 +8,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
-import { Bailarin, BailarinFormValue, BailarinesService, Genero, GrupoFamiliar, Inscripcion } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, BailarinesService, Genero, GrupoFamiliar, Inscripcion, OpcionConvivencia, OpcionElenco, OpcionEstado, OpcionGenero } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 import { obtenerTodasLasPaginas } from '../../services/paginas-api';
 import { CrearBailarinesComponent } from '../crear-bailarines/crear-bailarines.component';
@@ -30,11 +30,14 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   filtroGenero: Genero | 'TODOS' = 'TODOS';
   primeraFila = 0;
   readonly filasPorPagina = 10;
-  readonly opcionesFiltroGenero: { value: Genero | 'TODOS'; label: string }[] = [
-    { value: 'TODOS', label: 'Todos' },
-    { value: 'FEMENINO', label: 'Femenino' },
-    { value: 'MASCULINO', label: 'Masculino' }
-  ];
+  opcionesElenco: OpcionElenco[] = [];
+  opcionesGenero: OpcionGenero[] = [];
+  opcionesConvivencia: OpcionConvivencia[] = [];
+  opcionesEstado: OpcionEstado[] = [];
+  errorElencos = '';
+  errorGeneros = '';
+  errorConvivencia = '';
+  errorEstado = '';
   cargando = false;
   guardando = false;
   mostrarFormulario = false;
@@ -48,29 +51,47 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   fechaLimiteCandidatos: string | null = null;
   cargandoCandidatos = false;
   errorCandidatos = '';
-  readonly opcionesFiltroElenco: { value: Elenco | 'TODOS'; label: string }[];
   private solicitudesFoto: Subscription[] = [];
   private solicitudListado?: Subscription;
+  private solicitudGeneros?: Subscription;
+  private solicitudElencos?: Subscription;
+  private solicitudConvivencia?: Subscription;
+  private solicitudEstado?: Subscription;
 
   constructor(
     private readonly bailarinesService: BailarinesService,
     private readonly commonsService: CommonsService,
     private readonly route: ActivatedRoute
   ) {
-    this.opcionesFiltroElenco = [{ value: 'TODOS', label: 'Todos los elencos' }, ...this.commonsService.opcionesElenco];
   }
 
-  get opcionesElenco(): { value: Elenco; label: string }[] {
-    return this.commonsService.opcionesElenco;
+  get opcionesFiltroElenco(): { value: Elenco | 'TODOS'; label: string }[] {
+    return [{ value: 'TODOS', label: 'Todos los elencos' }, ...this.opcionesElenco];
+  }
+
+  get opcionesFiltroGenero(): { value: Genero | 'TODOS'; label: string }[] {
+    return [{ value: 'TODOS', label: 'Todos' }, ...this.opcionesGenero];
+  }
+
+  get parametrosListos(): boolean {
+    return this.opcionesElenco.length > 0
+      && this.opcionesGenero.length > 0
+      && this.opcionesConvivencia.length > 0
+      && this.opcionesEstado.length > 0
+      && !this.errorElencos
+      && !this.errorGeneros
+      && !this.errorConvivencia
+      && !this.errorEstado;
   }
 
   ngOnInit(): void {
     const estado = this.route.snapshot.queryParamMap.get('estado')?.toUpperCase();
     if (estado === 'ACTIVO' || estado === 'INACTIVO') this.filtroEstado = estado;
     const elenco = this.route.snapshot.queryParamMap.get('elenco')?.toUpperCase();
-    if (elenco && this.opcionesElenco.some(opcion => opcion.value === elenco)) {
-      this.filtroElenco = elenco as Elenco;
-    }
+    this.cargarElencos(elenco);
+    this.cargarGeneros();
+    this.cargarOpcionesConvivencia();
+    this.cargarOpcionesEstado();
     this.cargarBailarines();
     if (this.route.snapshot.queryParamMap.get('vista') === 'candidatos') this.seleccionarVista('candidatos');
   }
@@ -124,7 +145,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
 
   private cargarFotografiasCandidatos(bailarines: Bailarin[]): void {
     bailarines
-      .filter(b => !!(b.fotografia || b.fotografia_drive_id) && !this.fotoUrlPorId[b.id])
+      .filter(b => !!b.fotografia && !this.fotoUrlPorId[b.id])
       .forEach(b => {
         this.solicitudesFoto.push(this.bailarinesService.obtenerFotografia(b.id).subscribe({
           next: blob => {
@@ -141,7 +162,76 @@ export class BailarinesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.solicitudListado?.unsubscribe();
+    this.solicitudGeneros?.unsubscribe();
+    this.solicitudElencos?.unsubscribe();
+    this.solicitudConvivencia?.unsubscribe();
+    this.solicitudEstado?.unsubscribe();
     this.limpiarFotografias();
+  }
+
+  private cargarElencos(elencoInicial?: string): void {
+    this.errorElencos = '';
+    this.solicitudElencos = this.bailarinesService.obtenerElencos().subscribe({
+      next: opciones => {
+        this.opcionesElenco = opciones;
+        if (opciones.length === 0) {
+          this.errorElencos = 'No hay opciones de elenco activas configuradas.';
+          return;
+        }
+        if (elencoInicial && opciones.some(opcion => opcion.value === elencoInicial)) {
+          this.filtroElenco = elencoInicial;
+          this.cargarBailarines();
+        }
+      },
+      error: error => {
+        this.errorElencos = this.mensajeError(error, 'No se pudieron cargar las opciones de elenco.');
+      }
+    });
+  }
+
+  private cargarGeneros(): void {
+    this.errorGeneros = '';
+    this.solicitudGeneros = this.bailarinesService.obtenerGeneros().subscribe({
+      next: opciones => {
+        this.opcionesGenero = opciones;
+        if (opciones.length === 0) {
+          this.errorGeneros = 'No hay opciones de género activas configuradas.';
+        }
+      },
+      error: error => {
+        this.errorGeneros = this.mensajeError(error, 'No se pudieron cargar las opciones de género.');
+      }
+    });
+  }
+
+  private cargarOpcionesConvivencia(): void {
+    this.errorConvivencia = '';
+    this.solicitudConvivencia = this.bailarinesService.obtenerOpcionesConvivencia().subscribe({
+      next: opciones => {
+        this.opcionesConvivencia = opciones;
+        if (opciones.length === 0) {
+          this.errorConvivencia = 'No hay opciones de convivencia activas configuradas.';
+        }
+      },
+      error: error => {
+        this.errorConvivencia = this.mensajeError(error, 'No se pudieron cargar las opciones de convivencia.');
+      }
+    });
+  }
+
+  private cargarOpcionesEstado(): void {
+    this.errorEstado = '';
+    this.solicitudEstado = this.bailarinesService.obtenerEstados().subscribe({
+      next: opciones => {
+        this.opcionesEstado = opciones;
+        if (opciones.length === 0) {
+          this.errorEstado = 'No hay opciones de estado activas configuradas.';
+        }
+      },
+      error: error => {
+        this.errorEstado = this.mensajeError(error, 'No se pudieron cargar las opciones de estado.');
+      }
+    });
   }
 
   get bailarinesFiltrados(): Bailarin[] {
@@ -196,6 +286,10 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   }
 
   nuevo(): void {
+    if (!this.parametrosListos) {
+      this.errorFormulario = 'No se puede crear un bailarín hasta cargar todas las opciones activas.';
+      return;
+    }
     this.errorFormulario = '';
     this.bailarinSeleccionado = null;
     this.mostrarFormulario = true;
@@ -371,7 +465,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   private cargarFotografias(bailarines: Bailarin[]): void {
     this.limpiarFotografias();
     bailarines
-      .filter(bailarin => !!(bailarin.fotografia || bailarin.fotografia_drive_id))
+      .filter(bailarin => !!bailarin.fotografia)
       .forEach(bailarin => {
         const request = this.bailarinesService.obtenerFotografia(bailarin.id).subscribe({
           next: blob => {

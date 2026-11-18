@@ -9,12 +9,26 @@
 		<button class="btn btn-outline-primary" type="button" (click)="mostrarImportacion = true">
 			<i class="pi pi-file-excel" aria-hidden="true"></i> Importar Excel
 		</button>
-		<button class="btn btn-primary add-button" type="button" (click)="nuevo()">
+		<button class="btn btn-primary add-button" type="button" (click)="nuevo()" [disabled]="!parametrosListos"
+			[attr.title]="parametrosListos ? 'Registrar un bailarín' : 'Esperando las opciones activas de género, elenco, convivencia y estado'">
 			<i class="pi pi-plus" aria-hidden="true"></i>
 			Nuevo bailarín
 		</button>
 		</div>
 	</header>
+
+	<div *ngIf="errorGeneros" class="error-message" role="alert">
+		<p-message severity="error" [text]="errorGeneros"></p-message>
+	</div>
+	<div *ngIf="errorElencos" class="error-message" role="alert">
+		<p-message severity="error" [text]="errorElencos"></p-message>
+	</div>
+	<div *ngIf="errorConvivencia" class="error-message" role="alert">
+		<p-message severity="error" [text]="errorConvivencia"></p-message>
+	</div>
+	<div *ngIf="errorEstado" class="error-message" role="alert">
+		<p-message severity="error" [text]="errorEstado"></p-message>
+	</div>
 
 	<nav class="view-tabs" role="tablist">
 		<button type="button" role="tab" class="view-tab" [class.active]="vista === 'listado'" [attr.aria-selected]="vista === 'listado'" (click)="seleccionarVista('listado')">
@@ -225,6 +239,14 @@
 			[bailarin]="bailarinSeleccionado"
 			[guardando]="guardando"
 			[errorServidor]="errorFormulario"
+			[errorGeneros]="errorGeneros"
+			[opcionesGenero]="opcionesGenero"
+			[errorElencos]="errorElencos"
+			[opcionesElenco]="opcionesElenco"
+			[errorConvivencia]="errorConvivencia"
+			[opcionesConvivenciaCatalogo]="opcionesConvivencia"
+			[errorEstado]="errorEstado"
+			[opcionesEstado]="opcionesEstado"
 			(guardar)="guardar($event)"
 			(cancelar)="cerrarFormulario()">
 		</app-crear-bailarines>

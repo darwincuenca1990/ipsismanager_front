@@ -6,9 +6,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DropdownModule } from 'primeng/dropdown';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
-import { Subscription } from 'rxjs';
-import { Bailarin, BailarinesService } from '../../services/bailarines.service';
-import { CommonsService, Elenco } from '../../services/commons.service';
+import { forkJoin, map, Subscription } from 'rxjs';
+import { Bailarin, BailarinesService, OpcionElenco, OpcionParametro } from '../../services/bailarines.service';
+import { Elenco } from '../../services/commons.service';
 import { Coreografia, CoreografiasService } from '../../services/coreografias.service';
 import { obtenerTodasLasPaginas } from '../../services/paginas-api';
 import { Presentacion, PresentacionDatos, PresentacionesService, TipoPresentacion } from '../../services/presentaciones.service';
@@ -66,14 +66,11 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   private solicitudListado?: Subscription;
   private solicitudDetalle?: Subscription;
   private suscripcionRuta?: Subscription;
-  readonly opcionesElenco = this.commons.opcionesElenco.filter(opcion =>
-    opcion.value === 'INFANTIL' || opcion.value === 'PLANTA' || opcion.value === 'MÁSTER'
-  );
-  readonly opcionesTipoPresentacion: { label: string; value: TipoPresentacion }[] = [
-    { label: 'Un elenco', value: 'UN ELENCO' },
-    { label: 'Festival Ipsis', value: 'FESTIVALIPSIS' }
-  ];
+  opcionesElenco: OpcionElenco[] = [];
+  opcionesTipoPresentacion: { label: string; value: TipoPresentacion }[] = [];
+  opcionesClasePresentacion: OpcionParametro[] = [];
   opcionesPersonaCargo: { label: string; value: string }[] = [];
+  ordenFecha: 'asc' | 'desc' | null = null;
   readonly form = this.fb.nonNullable.group({
     fecha: ['', Validators.required],
     lugar: ['', [textoRequerido, Validators.maxLength(250)]],
@@ -82,12 +79,12 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     costo_total_presentacion: ['', [Validators.required, Validators.pattern(/^\d{1,10}(\.\d{1,2})?$/)]],
     costo_transporte: ['', [Validators.required, Validators.pattern(/^\d{1,10}(\.\d{1,2})?$/)]],
     nombre_transporte: ['', [textoRequerido, Validators.maxLength(200)]],
-    tipo_presentacion: this.fb.nonNullable.control<TipoPresentacion>('UN ELENCO')
+    tipo_presentacion: this.fb.nonNullable.control<TipoPresentacion | ''>('', Validators.required),
+    clase_presentacion: ['', Validators.required]
   });
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly commons: CommonsService,
     private readonly service: PresentacionesService,
     private readonly bailarinesService: BailarinesService,
     private readonly coreografiasService: CoreografiasService,
@@ -128,14 +125,24 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
 
   get presentacionesFiltradas(): Presentacion[] {
     const { meses, anios } = this.filtrosAplicados;
-    return this.presentaciones.filter(presentacion => {
+    const filtradas = this.presentaciones.filter(presentacion => {
       const [anio, mes] = presentacion.fecha.split('-').map(Number);
       return (!meses.length || meses.includes(mes)) && (!anios.length || anios.includes(anio));
+    });
+    if (!this.ordenFecha) return filtradas;
+    return filtradas.sort((a, b) => {
+      const orden = a.fecha.localeCompare(b.fecha);
+      return this.ordenFecha === 'asc' ? orden : -orden;
     });
   }
 
   get presentacionesPagina(): Presentacion[] {
     return this.presentacionesFiltradas.slice(this.primeraFila, this.primeraFila + this.filasPorPagina);
+  }
+
+  alternarOrdenFecha(): void {
+    this.ordenFecha = this.ordenFecha === 'asc' ? 'desc' : 'asc';
+    this.primeraFila = 0;
   }
 
   cambiarPagina(evento: PaginatorState): void {
@@ -178,19 +185,65 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
   cargarCatalogos(): void {
     this.cargandoCatalogos = true;
     this.errorCatalogos = '';
-    cargarCatalogosPresentacion(this.bailarinesService, this.coreografiasService).subscribe({
-      next: catalogos => {
+    forkJoin({
+      catalogos: cargarCatalogosPresentacion(this.bailarinesService, this.coreografiasService),
+      elencos: this.bailarinesService.obtenerElencosPresentacion(),
+      tiposPresentacion: this.bailarinesService.obtenerOpcionesParametro('TIPOS_PRESENTACION').pipe(
+        map(opciones => this.mapearTiposPresentacion(opciones))
+      ),
+      clasesPresentacion: this.bailarinesService.obtenerClasesPresentacion()
+    }).subscribe({
+      next: ({ catalogos, elencos, tiposPresentacion, clasesPresentacion }) => {
         this.activos = new Set(catalogos.activos.map(b => b.id));
         this.bailarines = combinarBailarines(catalogos.inactivos, catalogos.activos);
         this.coreografias = catalogos.coreografias;
+        this.opcionesElenco = elencos;
+        this.opcionesTipoPresentacion = tiposPresentacion;
+        this.opcionesClasePresentacion = clasesPresentacion;
+        this.errorCatalogos = [
+          elencos.length === 0 ? 'No hay elencos de presentación activos configurados.' : '',
+          tiposPresentacion.length === 0 ? 'No hay tipos de presentación activos configurados.' : '',
+          clasesPresentacion.length === 0 ? 'No hay clases de presentación activas configuradas.' : ''
+        ].filter(Boolean).join(' ');
+        if (tiposPresentacion.length > 0 &&
+          !tiposPresentacion.some(opcion => opcion.value === this.form.controls.tipo_presentacion.value)) {
+          this.form.controls.tipo_presentacion.setValue(this.tipoPresentacionPredeterminado());
+        }
         this.actualizarOpcionesPersonaCargo();
         this.cargandoCatalogos = false;
       },
       error: error => {
         this.cargandoCatalogos = false;
-        this.errorCatalogos = this.mensajeError(error, 'No se pudieron cargar los bailarines o las coreografías.');
+        this.errorCatalogos = this.mensajeError(error, 'No se pudieron cargar los bailarines, coreografías o elencos.');
       }
     });
+  }
+
+  private mapearTiposPresentacion(opciones: OpcionParametro[]): { label: string; value: TipoPresentacion }[] {
+    return opciones.map(opcion => {
+      const nombreNormalizado = opcion.label
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLocaleUpperCase('es');
+      const value = nombreNormalizado === 'FESTIVAL IPSIS'
+        ? 'FESTIVALIPSIS'
+        : nombreNormalizado;
+      if (value !== 'UN ELENCO' && value !== 'FESTIVALIPSIS') {
+        throw new Error(`El tipo de presentación "${opcion.label}" no es compatible con el API.`);
+      }
+      return {
+        label: value === 'UN ELENCO' ? 'Un elenco' : 'Festival Ipsis',
+        value
+      };
+    });
+  }
+
+  private tipoPresentacionPredeterminado(): TipoPresentacion | '' {
+    return this.opcionesTipoPresentacion.find(opcion => opcion.value === 'UN ELENCO')?.value
+      ?? this.opcionesTipoPresentacion[0]?.value
+      ?? '';
   }
 
   get personasCargo(): Bailarin[] {
@@ -225,7 +278,7 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     if (this.form.controls.tipo_presentacion.value !== 'FESTIVALIPSIS') {
       return bailarines.length ? [{ elenco: '', bailarines }] : [];
     }
-    return agruparPorElenco(bailarines, bailarin => bailarin.elenco, this.commons.opcionesElenco.map(opcion => opcion.value))
+    return agruparPorElenco(bailarines, bailarin => bailarin.elenco, this.opcionesElenco.map(opcion => opcion.value))
       .map(grupo => ({ elenco: grupo.elenco, bailarines: grupo.elementos }));
   }
 
@@ -253,7 +306,10 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     this.busquedaBailarin = '';
     this.seleccionada = null;
     this.actualizarOpcionesPersonaCargo();
-    this.form.reset({ tipo_presentacion: 'UN ELENCO' });
+    this.form.reset({
+      tipo_presentacion: this.tipoPresentacionPredeterminado(),
+      clase_presentacion: ''
+    });
     this.elencos = [];
     this.coreografiasSeleccionadas.clear();
     this.idsCoreografiasSeleccionadas = [];
@@ -309,7 +365,8 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
           costo_total_presentacion: String(presentacion.costo_total_presentacion),
           costo_transporte: String(presentacion.costo_transporte),
           nombre_transporte: presentacion.nombre_transporte,
-          tipo_presentacion: presentacion.tipo_presentacion
+          tipo_presentacion: presentacion.tipo_presentacion,
+          clase_presentacion: presentacion.clase_presentacion
         });
         this.elencos = [...presentacion.elencos];
         this.asignaciones = new Map(presentacion.bitacora.map(item => [item.bailarin, new Set(item.coreografias)]));
@@ -392,6 +449,32 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     this.errorFormulario = '';
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
+    if (this.opcionesElenco.length === 0) {
+      this.errorFormulario = 'No hay elencos de presentación activos configurados.';
+      return;
+    }
+    if (this.opcionesClasePresentacion.length === 0) {
+      this.errorFormulario = 'No hay clases de presentación activas configuradas.';
+      return;
+    }
+    const tipoPresentacion = this.opcionesTipoPresentacion.find(
+      opcion => opcion.value === this.form.controls.tipo_presentacion.value
+    )?.value;
+    if (!tipoPresentacion) {
+      this.errorFormulario = 'Seleccione un tipo de presentación activo.';
+      return;
+    }
+    const clasePresentacion = this.opcionesClasePresentacion.find(
+      opcion => opcion.value === this.form.controls.clase_presentacion.value
+    )?.value;
+    if (!clasePresentacion) {
+      this.errorFormulario = 'Seleccione una clase de presentación activa.';
+      return;
+    }
+    if (this.elencos.some(elenco => !this.opcionesElenco.some(opcion => opcion.value === elenco))) {
+      this.errorFormulario = 'Seleccione solo elencos de presentación activos.';
+      return;
+    }
     if (!this.elencos.length || (this.form.controls.tipo_presentacion.value === 'UN ELENCO' && this.elencos.length !== 1)) {
       this.errorFormulario = 'Seleccione el elenco o los elencos de la presentación.';
       return;
@@ -416,6 +499,8 @@ export class PresentacionesComponent implements OnInit, OnDestroy {
     const datos = this.form.getRawValue();
     const payload: PresentacionDatos = {
       ...datos,
+      tipo_presentacion: tipoPresentacion,
+      clase_presentacion: clasePresentacion,
       lugar: datos.lugar.trim(),
       nombre_transporte: datos.nombre_transporte.trim(),
       persona_cargo: persona,

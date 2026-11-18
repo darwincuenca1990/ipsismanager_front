@@ -106,6 +106,7 @@
 
 <app-detalle-presentacion *ngIf="detalle as presentacion" [presentacion]="presentacion"
   [bailarines]="bailarinesDetalle" [coreografias]="coreografiasDetalle"
+  [opcionesElenco]="opcionesElencoDetalle"
   (cerrar)="cerrarDetalle()"></app-detalle-presentacion>
 
 <ng-template #idsPresentaciones let-ids>

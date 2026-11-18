@@ -11,7 +11,8 @@ describe('PresentacionesService', () => {
   const datos: PresentacionDatos = {
     fecha: '2026-11-11', lugar: 'Loja', hora_presentacion: '10:00', persona_cargo: 1,
     costo_total_presentacion: '100.00', costo_transporte: '20.00', nombre_transporte: 'Bus',
-    tipo_presentacion: 'UN ELENCO', elencos: ['PLANTA'], bitacora: [{ bailarin: 1, coreografias: [3] }]
+    tipo_presentacion: 'UN ELENCO', clase_presentacion: 'Pagada',
+    elencos: ['PLANTA'], bitacora: [{ bailarin: 1, coreografias: [3] }]
   };
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });

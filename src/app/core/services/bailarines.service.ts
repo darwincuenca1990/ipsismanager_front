@@ -28,7 +28,23 @@ export interface Inscripcion {
   fecha_salida: string | null;
 }
 
-export type Genero = 'MASCULINO' | 'FEMENINO';
+export type Genero = string;
+
+export interface OpcionParametro {
+  label: string;
+  value: string;
+}
+
+export type OpcionGenero = OpcionParametro;
+export type OpcionElenco = OpcionParametro;
+export type OpcionConvivencia = OpcionParametro;
+export type OpcionEstado = OpcionParametro;
+
+interface ParametroResponse {
+  nombre: string;
+  valor: string;
+  estado: string;
+}
 
 export interface Bailarin {
   id: number;
@@ -44,7 +60,7 @@ export interface Bailarin {
   lugar_trabajo: string;
   direccion_domicilio: string;
   referencia_domicilio: string;
-  vive_con: 'PADRES' | 'FAMILIARES' | 'OTROS' | '';
+  vive_con: string;
   fecha_nacimiento: string;
   elenco: Elenco;
   lugar_nacimiento: string;
@@ -53,7 +69,6 @@ export interface Bailarin {
   detalle_enfermedad: string;
   correo: string;
   fotografia?: string | null;
-  fotografia_drive_id?: string | null;
   autorizado_publicacion: boolean;
   fecha_autorizacion_publicacion?: string | null;
   inscripcion?: Inscripcion;
@@ -128,8 +143,69 @@ export class BailarinesService {
     return this.http.get(`${this.apiUrl}${path}`, { responseType: 'blob' });
   }
 
+  obtenerGeneros(): Observable<OpcionGenero[]> {
+    return this.obtenerOpcionesParametro('GENERO');
+  }
+
+  obtenerElencos(): Observable<OpcionElenco[]> {
+    return this.obtenerOpcionesParametro('ELENCO');
+  }
+
+  obtenerElencosPresentacion(): Observable<OpcionElenco[]> {
+    return this.obtenerOpcionesParametro('ELENCOS_PRESENTACION');
+  }
+
+  obtenerOpcionesConvivencia(): Observable<OpcionConvivencia[]> {
+    return this.obtenerOpcionesParametro('CONVIVE_CON');
+  }
+
+  obtenerEstados(): Observable<OpcionEstado[]> {
+    return this.obtenerOpcionesParametro('ESTADO');
+  }
+
+  obtenerOpcionesParametro(nombre: string): Observable<OpcionParametro[]> {
+    return this.obtenerOpcionesParametroConValor(nombre, valor => valor.toLocaleUpperCase('es'));
+  }
+
+  obtenerClasesPresentacion(): Observable<OpcionParametro[]> {
+    return this.obtenerOpcionesParametroConValor('CLASE_PRESENTACION', valor => valor);
+  }
+
+  private obtenerOpcionesParametroConValor(
+    nombre: string,
+    transformarValor: (valor: string) => string
+  ): Observable<OpcionParametro[]> {
+    return this.http.get<ParametroResponse>(
+      `${this.apiUrl}/parametros/por-nombre/${nombre}`
+    ).pipe(
+      map(response => {
+        if (response.estado.trim() !== 'ACTIVO') return [];
+        if (typeof response.valor !== 'string') {
+          throw new Error(`El parámetro ${nombre} no contiene una lista de valores válida.`);
+        }
+        const opciones = response.valor.split(',')
+          .map(label => label.trim())
+          .filter(Boolean)
+          .map(label => ({
+            label: label.split(/\s+/)
+              .map(palabra => `${palabra.charAt(0).toLocaleUpperCase('es')}${palabra.slice(1).toLocaleLowerCase('es')}`)
+              .join(' '),
+            value: transformarValor(label)
+          }));
+        if (opciones.length === 0) {
+          throw new Error(`El parámetro ${nombre} no tiene valores configurados.`);
+        }
+        return opciones;
+      })
+    );
+  }
+
   obtenerGrupo(id: number): Observable<GrupoFamiliar> {
     return this.http.get<GrupoFamiliar>(`${this.apiUrl}/grupos-familiares/${id}/`);
+  }
+
+  obtenerBailarin(id: number): Observable<Bailarin> {
+    return this.http.get<Bailarin>(`${this.apiUrl}/bailarines/${id}/`);
   }
 
   crear(value: BailarinFormValue): Observable<any> {

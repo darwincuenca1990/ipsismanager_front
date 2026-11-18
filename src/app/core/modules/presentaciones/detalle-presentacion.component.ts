@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Bailarin } from '../../services/bailarines.service';
-import { CommonsService } from '../../services/commons.service';
+import { Bailarin, OpcionElenco } from '../../services/bailarines.service';
 import { Coreografia } from '../../services/coreografias.service';
 import { Presentacion } from '../../services/presentaciones.service';
 import { agruparPorElenco } from './agrupar-por-elenco';
@@ -17,9 +16,8 @@ export class DetallePresentacionComponent {
   @Input({ required: true }) presentacion!: Presentacion;
   @Input({ required: true }) bailarines: Bailarin[] = [];
   @Input({ required: true }) coreografias: Coreografia[] = [];
+  @Input({ required: true }) opcionesElenco: OpcionElenco[] = [];
   @Output() cerrar = new EventEmitter<void>();
-
-  constructor(private readonly commons: CommonsService) {}
 
   get coreografiasDetalle(): { id: number; nombre: string }[] {
     const ids = [...new Set(this.presentacion.bitacora.flatMap(item => item.coreografias))];
@@ -43,7 +41,7 @@ export class DetallePresentacionComponent {
     );
     if (!this.agruparDetallePorElenco) return registros.length ? [{ elenco: '', elementos: registros }] : [];
     return agruparPorElenco(registros, registro => this.bailarinDetalle(registro.bailarin)?.elenco,
-      this.commons.opcionesElenco.map(opcion => opcion.value));
+      this.opcionesElenco.map(opcion => opcion.value));
   }
 
   identificarGrupo(_indice: number, grupo: { elenco: string }): string {

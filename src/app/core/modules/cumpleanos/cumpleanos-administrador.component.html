@@ -233,8 +233,8 @@
 
 				<div class="tarjeta-header">
 					<div class="bailarin-info-full">
-						<h3 class="bailarin-nombre">{{ tarjeta.bailarin_nombre || (tarjeta.bailarin?.nombres + ' ' + tarjeta.bailarin?.apellidos) }}</h3>
-						<p class="bailarin-meta">Cumpleaños {{ tarjeta.anio }}</p>
+						<h3 class="bailarin-nombre">{{ nombreBailarin(tarjeta) }}</h3>
+						<p class="bailarin-meta">Cumpleaños {{ fechaCumpleanos(tarjeta) }} · Afiche {{ tarjeta.anio }}</p>
 					</div>
 					<span class="estado-badge estado-no-generado">
 						Sin generar
@@ -302,8 +302,8 @@
 
 				<div class="tarjeta-header">
 					<div class="bailarin-info-full">
-						<h3 class="bailarin-nombre">{{ tarjeta.bailarin_nombre || (tarjeta.bailarin?.nombres + ' ' + tarjeta.bailarin?.apellidos) }}</h3>
-						<p class="bailarin-meta">Cumpleaños {{ tarjeta.anio }}</p>
+						<h3 class="bailarin-nombre">{{ nombreBailarin(tarjeta) }}</h3>
+						<p class="bailarin-meta">Cumpleaños {{ fechaCumpleanos(tarjeta) }} · Afiche {{ tarjeta.anio }}</p>
 					</div>
 					<span class="estado-badge estado-generado">
 						Generado
@@ -350,7 +350,7 @@
 			<div class="form-body">
 				<div *ngIf="errorFormulario" class="error-message" role="alert">{{ errorFormulario }}</div>
 				<div *ngIf="tarjetaSeleccionada" class="tarjeta-info">
-					<p><strong>Bailarín:</strong> {{ tarjetaSeleccionada.bailarin_nombre || (tarjetaSeleccionada.bailarin?.nombres + ' ' + tarjetaSeleccionada.bailarin?.apellidos) }}</p>
+					<p><strong>Bailarín:</strong> {{ nombreBailarin(tarjetaSeleccionada) }}</p>
 					<p><strong>Año:</strong> {{ tarjetaSeleccionada.anio }}</p>
 					<p *ngIf="tarjetaSeleccionada.motivo_no_generacion" class="error-reason">
 						<strong>Motivo de error:</strong> {{ tarjetaSeleccionada.motivo_no_generacion }}
@@ -404,7 +404,7 @@
 			<div class="form-body">
 				<div *ngIf="errorFormulario" class="error-message" role="alert">{{ errorFormulario }}</div>
 				<div *ngIf="tarjetaSeleccionada" class="tarjeta-info">
-					<p><strong>Bailarín:</strong> {{ tarjetaSeleccionada.bailarin_nombre || (tarjetaSeleccionada.bailarin?.nombres + ' ' + tarjetaSeleccionada.bailarin?.apellidos) }}</p>
+					<p><strong>Bailarín:</strong> {{ nombreBailarin(tarjetaSeleccionada) }}</p>
 					<p><strong>Año:</strong> {{ tarjetaSeleccionada.anio }}</p>
 				</div>
 

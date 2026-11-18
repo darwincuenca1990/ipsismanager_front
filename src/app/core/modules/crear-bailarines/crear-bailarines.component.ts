@@ -5,7 +5,7 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { DropdownModule } from 'primeng/dropdown';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Bailarin, BailarinFormValue, Genero, GrupoFamiliar } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, Genero, GrupoFamiliar, OpcionConvivencia, OpcionElenco, OpcionEstado, OpcionGenero } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 
 @Component({
@@ -19,6 +19,14 @@ export class CrearBailarinesComponent implements OnChanges {
   @Input() bailarin: Bailarin | null = null;
   @Input() guardando = false;
   @Input() errorServidor = '';
+  @Input() errorGeneros = '';
+  @Input() opcionesGenero: OpcionGenero[] = [];
+  @Input() errorElencos = '';
+  @Input() opcionesElenco: OpcionElenco[] = [];
+  @Input() errorConvivencia = '';
+  @Input() opcionesConvivenciaCatalogo: OpcionConvivencia[] = [];
+  @Input() errorEstado = '';
+  @Input() opcionesEstado: OpcionEstado[] = [];
   @Output() guardar = new EventEmitter<BailarinFormValue>();
   @Output() cancelar = new EventEmitter<void>();
 
@@ -28,20 +36,6 @@ export class CrearBailarinesComponent implements OnChanges {
   representanteSeleccionado: 'PAPA' | 'MAMA' | 'OTRO' = 'OTRO';
   readonly fechaMinimaIngreso = '2013-05-13';
   readonly fechaMaxima = this.fechaActual();
-  readonly opcionesGenero: { label: string; value: Genero }[] = [
-    { label: 'Masculino', value: 'MASCULINO' },
-    { label: 'Femenino', value: 'FEMENINO' }
-  ];
-  readonly opcionesConvivencia = [
-    { label: 'Seleccione', value: '' },
-    { label: 'Padres', value: 'PADRES' },
-    { label: 'Familiares', value: 'FAMILIARES' },
-    { label: 'Otros', value: 'OTROS' }
-  ];
-  readonly opcionesEstado = [
-    { label: 'Activo', value: 'ACTIVO' },
-    { label: 'Inactivo', value: 'INACTIVO' }
-  ];
   private opcionesRepresentanteCache: { label: string; value: string; disabled: boolean }[] = [];
   private disponibilidadRepresentante = '';
 
@@ -143,10 +137,6 @@ export class CrearBailarinesComponent implements OnChanges {
     }
   }
 
-  get opcionesElenco(): { value: Elenco; label: string }[] {
-    return this.commonsService.opcionesElenco;
-  }
-
   get opcionesRepresentante(): { label: string; value: string; disabled: boolean }[] {
     const grupo = this.form.controls.grupo_familiar.controls;
     const padreDisponible = !!(grupo.apellidos_papa.value || grupo.nombres_papa.value);
@@ -161,6 +151,10 @@ export class CrearBailarinesComponent implements OnChanges {
       ];
     }
     return this.opcionesRepresentanteCache;
+  }
+
+  get opcionesConvivencia(): OpcionConvivencia[] {
+    return [{ label: 'Seleccione', value: '' }, ...this.opcionesConvivenciaCatalogo];
   }
 
   get antiguedadAgrupacion(): string {
@@ -436,9 +430,18 @@ export class CrearBailarinesComponent implements OnChanges {
       age--;
     }
 
-    if (age >= 5 && age <= 13) return 'INFANTIL';
-    if (age >= 14 && age <= 27) return 'PLANTA';
-    if (age > 27) return 'MÁSTER';
+    const elencoSugerido = age >= 5 && age <= 13
+      ? 'INFANTIL'
+      : age >= 14 && age <= 27
+        ? 'PLANTA'
+        : age > 27
+          ? 'MÁSTER'
+          : null;
+    if (elencoSugerido) {
+      return this.opcionesElenco.find(opcion =>
+        opcion.value.toLocaleUpperCase('es') === elencoSugerido
+      )?.value ?? null;
+    }
     return null;
   }
 

@@ -24,6 +24,7 @@ describe('PresentacionesComponent', () => {
     id: 5, fecha: '2026-11-11', hora_presentacion: '10:00:00', lugar: 'Loja',
     persona_cargo: 1, costo_total_presentacion: '200.25', costo_transporte: '50.10',
     costo_neto: '150.15', nombre_transporte: 'Bus', tipo_presentacion: 'FESTIVALIPSIS',
+    clase_presentacion: 'Pagada',
     elencos: ['INFANTIL', 'PLANTA'], bitacora: [
       { bailarin: 1, coreografias: [10] }, { bailarin: 2, coreografias: [10, 11] }
     ]
@@ -37,8 +38,28 @@ describe('PresentacionesComponent', () => {
     service.obtener.and.returnValue(of(presentacion));
     service.crear.and.returnValue(of(presentacion));
     service.actualizar.and.returnValue(of(presentacion));
-    bailarinesService = jasmine.createSpyObj('BailarinesService', ['listar']);
+    bailarinesService = jasmine.createSpyObj('BailarinesService', [
+      'listar', 'obtenerElencosPresentacion', 'obtenerOpcionesParametro', 'obtenerClasesPresentacion'
+    ]);
     bailarinesService.listar.and.callFake(filtros => of(filtros.estado === 'ACTIVO' ? bailarines : []));
+    bailarinesService.obtenerElencosPresentacion.and.returnValue(of([
+      { label: 'Infantil', value: 'INFANTIL' },
+      { label: 'Planta', value: 'PLANTA' },
+      { label: 'Máster', value: 'MÁSTER' },
+      { label: 'Aspirante Infantil', value: 'ASPIRANTE INFANTIL' },
+      { label: 'Aspirante Planta', value: 'ASPIRANTE PLANTA' },
+      { label: 'Aspirante Máster', value: 'ASPIRANTE MÁSTER' }
+    ]));
+    bailarinesService.obtenerOpcionesParametro.and.returnValue(of([
+        { label: 'Un Elenco', value: 'UN ELENCO' },
+      { label: 'Festival Ipsis', value: 'FESTIVAL IPSIS' }
+    ]));
+    bailarinesService.obtenerClasesPresentacion.and.returnValue(of([
+      { label: 'Pagada', value: 'Pagada' },
+      { label: 'Colaboración', value: 'Colaboración' },
+      { label: 'Festivales', value: 'Festivales' },
+      { label: 'Concursos', value: 'Concursos' }
+    ]));
     const coreografiasService = jasmine.createSpyObj('CoreografiasService', ['listar']);
     coreografiasService.listar.and.returnValue(of([
       { id: 10, nombre: 'Danza', region: 'Sierra', descripcion: 'Texto', url_video: 'https://example.com' },
@@ -68,6 +89,42 @@ describe('PresentacionesComponent', () => {
     expect(component.personasCargo.map(b => b.id)).toEqual([3, 1]);
   });
 
+  it('carga tipos de presentación activos y conserva los valores requeridos por el API', () => {
+    expect(bailarinesService.obtenerOpcionesParametro).toHaveBeenCalledWith('TIPOS_PRESENTACION');
+    expect(bailarinesService.obtenerElencosPresentacion).toHaveBeenCalled();
+    expect(bailarinesService.obtenerClasesPresentacion).toHaveBeenCalled();
+    expect(component.opcionesClasePresentacion.map(opcion => opcion.value)).toEqual([
+      'Pagada', 'Colaboración', 'Festivales', 'Concursos'
+    ]);
+    expect(component.opcionesTipoPresentacion).toEqual([
+      { label: 'Un elenco', value: 'UN ELENCO' },
+      { label: 'Festival Ipsis', value: 'FESTIVALIPSIS' }
+    ]);
+    expect(component.form.controls.tipo_presentacion.value).toBe('UN ELENCO');
+  });
+
+  it('impide crear presentaciones cuando no hay elencos activos', () => {
+    bailarinesService.obtenerElencosPresentacion.and.returnValue(of([]));
+    component.cargarCatalogos();
+    fixture.detectChanges();
+
+    expect(component.errorCatalogos).toBe('No hay elencos de presentación activos configurados.');
+    const boton: HTMLButtonElement = fixture.nativeElement.querySelector('.page-heading button');
+    expect(boton.disabled).toBeTrue();
+
+    component.nuevo();
+    component.form.patchValue({
+      fecha: '2026-11-11', hora_presentacion: '10:00', lugar: 'Loja', persona_cargo: '1',
+      costo_total_presentacion: '200.25', costo_transporte: '50.10', nombre_transporte: 'Bus',
+      clase_presentacion: 'Pagada'
+    });
+    component.elencos = ['PLANTA'];
+    component.guardar();
+
+    expect(component.errorFormulario).toBe('No hay elencos de presentación activos configurados.');
+    expect(service.crear).not.toHaveBeenCalled();
+  });
+
   it('inicia con mes y año actuales y ofrece los rangos de selección solicitados', fakeAsync(() => {
     tick();
     fixture.detectChanges();
@@ -86,6 +143,30 @@ describe('PresentacionesComponent', () => {
     expect(meses.value).toEqual([hoy.getMonth() + 1]);
     expect(anios.value).toEqual([hoy.getFullYear()]);
   }));
+
+  it('ordena las presentaciones por fecha ascendente y descendente desde el encabezado', () => {
+    component.filtrosAplicados = { meses: [], anios: [], lugar: '' };
+    component.presentaciones = [
+      { ...presentacion, id: 3, fecha: '2026-03-01' },
+      { ...presentacion, id: 1, fecha: '2026-01-01' },
+      { ...presentacion, id: 2, fecha: '2026-02-01' }
+    ];
+    expect(component.presentacionesFiltradas.map(item => item.id)).toEqual([3, 1, 2]);
+
+    const encabezado: HTMLTableCellElement = fixture.nativeElement.querySelector('thead th');
+    const boton: HTMLButtonElement = encabezado.querySelector('button')!;
+    component.primeraFila = 10;
+    boton.click();
+    fixture.detectChanges();
+    expect(component.presentacionesFiltradas.map(item => item.id)).toEqual([1, 2, 3]);
+    expect(component.primeraFila).toBe(0);
+    expect(encabezado.getAttribute('aria-sort')).toBe('ascending');
+
+    boton.click();
+    fixture.detectChanges();
+    expect(component.presentacionesFiltradas.map(item => item.id)).toEqual([3, 2, 1]);
+    expect(encabezado.getAttribute('aria-sort')).toBe('descending');
+  });
 
   it('combina múltiples meses y años, recupera páginas del servidor y pagina de diez en diez', fakeAsync(() => {
     const datos: Presentacion[] = Array.from({ length: 25 }, (_, indice) => ({
@@ -167,7 +248,7 @@ describe('PresentacionesComponent', () => {
     expect(service.obtener).toHaveBeenCalledWith(5);
     const detalle: HTMLElement = fixture.nativeElement.querySelector('[aria-labelledby="detalle-presentacion-titulo"]');
     expect(detalle).toBeTruthy();
-    for (const valor of ['2026-11-11', '10:00:00', 'Loja', 'Paz Juan', '200.25', '50.10', '150.15', 'Bus', 'FESTIVALIPSIS', 'INFANTIL', 'PLANTA', 'Danza', 'Danza 2']) {
+    for (const valor of ['2026-11-11', '10:00:00', 'Pagada', 'Loja', 'Paz Juan', '200.25', '50.10', '150.15', 'Bus', 'FESTIVALIPSIS', 'INFANTIL', 'PLANTA', 'Danza', 'Danza 2']) {
       expect(detalle.textContent).toContain(valor);
     }
     const filas = detalle.querySelectorAll('.assignment-table tbody tr:not(.elenco-separator)');
@@ -417,7 +498,7 @@ describe('PresentacionesComponent', () => {
     component.form.patchValue({
       fecha: '2026-11-11', hora_presentacion: '10:00', lugar: 'Loja', persona_cargo: '1',
       costo_total_presentacion: '100', costo_transporte: '20', nombre_transporte: 'Bus',
-      tipo_presentacion: 'FESTIVALIPSIS'
+      tipo_presentacion: 'FESTIVALIPSIS', clase_presentacion: 'Pagada'
     });
     component.elencos = ['INFANTIL', 'PLANTA'];
     fixture.detectChanges();
@@ -545,8 +626,10 @@ describe('PresentacionesComponent', () => {
     fixture.detectChanges();
     const persona = fixture.debugElement.query(By.css('#selector-persona-cargo')).componentInstance as Dropdown;
     const tipo = fixture.debugElement.query(By.css('#selector-tipo-presentacion')).componentInstance as Dropdown;
+    const clase = fixture.debugElement.query(By.css('#selector-clase-presentacion')).componentInstance as Dropdown;
     expect(persona.value).toBe('1');
     expect(tipo.value).toBe('FESTIVALIPSIS');
+    expect(clase.value).toBe('Pagada');
   }));
 
   it('recupera y actualiza la bitácora sin asignar todas las coreografías a todos', () => {
@@ -564,7 +647,8 @@ describe('PresentacionesComponent', () => {
     component.nuevo();
     component.form.patchValue({
       fecha: '2026-11-11', hora_presentacion: '10:00', lugar: ' Loja ', persona_cargo: '1',
-      costo_total_presentacion: '200.25', costo_transporte: '50.10', nombre_transporte: ' Bus '
+      costo_total_presentacion: '200.25', costo_transporte: '50.10', nombre_transporte: ' Bus ',
+      clase_presentacion: 'Pagada'
     });
     component.seleccionarUnElenco('PLANTA');
     component.seleccionarCoreografia(10, true);
@@ -573,6 +657,7 @@ describe('PresentacionesComponent', () => {
     component.guardar();
     expect(service.crear).toHaveBeenCalledWith(jasmine.objectContaining({
       lugar: 'Loja', nombre_transporte: 'Bus', persona_cargo: 1, tipo_presentacion: 'UN ELENCO',
+      clase_presentacion: 'Pagada',
       elencos: ['PLANTA'], bitacora: [{ bailarin: 1, coreografias: [10] }]
     }));
     expect(component.mensajeExito).toContain('creada');
