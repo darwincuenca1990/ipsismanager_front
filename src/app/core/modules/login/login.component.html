@@ -42,7 +42,22 @@
 
                 </div>
               </div>
-              <p-button label="Iniciar sesión" type="submit" class="p-mt-2 small-button"
+              <div class="row mb-3 align-items-center">
+                <label for="captcha-answer" class="col-sm-3 col-form-label">Verificación</label>
+                <div class="col-sm-9">
+                  <div class="math-challenge mb-2" aria-live="polite">
+                    Resuelve la suma: <strong>{{ primerNumero }} + {{ segundoNumero }} = ?</strong>
+                  </div>
+                  <input id="captcha-answer" type="number" min="2" max="20" step="1"
+                    pInputText formControlName="captchaAnswer" class="small-calendar w-100"
+                    autocomplete="off" aria-describedby="captcha-help" (input)="captchaError = ''" />
+                  <small id="captcha-help" class="d-block mt-1 text-muted">Ingresa el resultado para continuar.</small>
+                  <small *ngIf="submitted && loginForm.controls['captchaAnswer'].invalid && !captchaError"
+                    class="p-error d-block mt-1">La respuesta de la suma es obligatoria.</small>
+                  <small *ngIf="captchaError" class="p-error d-block mt-1" role="alert">{{ captchaError }}</small>
+                </div>
+              </div>
+              <p-button label="Iniciar sesión" type="submit" class="p-mt-2 small-button rounded-login-button"
                 icon="pi pi-sign-in"></p-button>
             </form>
           </p-card>

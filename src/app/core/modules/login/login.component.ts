@@ -24,9 +24,9 @@ export class LoginComponent {
   rememberUser = false;
   loginForm: FormGroup;
   submitted = false;
-
-
-
+  primerNumero = 1;
+  segundoNumero = 1;
+  captchaError = '';
 
   constructor(private fb: FormBuilder,
     private router: Router,
@@ -34,33 +34,54 @@ export class LoginComponent {
     private userInfoService: UserInfoService) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
+      captchaAnswer: ['', [
+        Validators.required,
+        Validators.pattern(/^\d+$/),
+        Validators.min(2),
+        Validators.max(20)
+      ]]
     });
+    this.renovarDesafio();
   }
 
   onSubmit() {
     this.submitted = true;
-    if (this.loginForm.valid) {
-      const { username, password } = this.loginForm.value;
-      this.authService.login(username, password).subscribe({
-        next: res => {
-          this.authService.saveToken(res.data.access, res.data.refresh, res.data.expires_in.toString()); // si es JWT: res.access
-          this.setInfoUser(res);
-          this.router.navigate(['/dashboard']);
-        },
-        error: err => {
-          console.error('Login failed', err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error de autenticación',
-            text: 'Usuario o contraseña incorrectos o el usuario está inactivo',
-            confirmButtonColor: '#d33'
-          });
-          console.error('Login failed', err);
-        }
-      });
-      // this.router.navigate(['/dashboard']);
+    if (this.loginForm.invalid) return;
+
+    const respuesta = Number(this.loginForm.controls['captchaAnswer'].value);
+    if (respuesta !== this.primerNumero + this.segundoNumero) {
+      this.renovarDesafio('La respuesta es incorrecta. Resuelve la nueva suma.');
+      return;
     }
+
+    this.captchaError = '';
+    const { username, password } = this.loginForm.value;
+    this.authService.login(username, password).subscribe({
+      next: res => {
+        this.authService.saveToken(res.data.access, res.data.refresh, res.data.expires_in.toString()); // si es JWT: res.access
+        this.setInfoUser(res);
+        this.router.navigate(['/dashboard']);
+      },
+      error: err => {
+        console.error('Login failed', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de autenticación',
+          text: 'Usuario o contraseña incorrectos o el usuario está inactivo',
+          confirmButtonColor: '#d33'
+        });
+        this.renovarDesafio('Resuelve la nueva suma para intentarlo de nuevo.');
+        console.error('Login failed', err);
+      }
+    });
+  }
+
+  private renovarDesafio(mensaje = ''): void {
+    this.primerNumero = Math.floor(Math.random() * 10) + 1;
+    this.segundoNumero = Math.floor(Math.random() * 10) + 1;
+    this.loginForm.controls['captchaAnswer'].reset('');
+    this.captchaError = mensaje;
   }
 
   /**Setea la informacion del usuario */

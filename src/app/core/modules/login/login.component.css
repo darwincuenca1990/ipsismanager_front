@@ -152,6 +152,14 @@ body {
   top: -100px;
 }
 
+.math-challenge {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  background-color: #f8f9fa;
+  text-align: left;
+}
+
 /* Para cualquier input PrimeNG con clase small-calendar */
 /* Input pequeño con clase Bootstrap y PrimeNG */
 ::ng-deep .small-calendar.form-control,
@@ -166,6 +174,10 @@ body {
   padding: 0.25rem 0.75rem !important;
   height: 2rem !important;
   line-height: 1 !important;
+}
+
+::ng-deep .rounded-login-button .p-button {
+  border-radius: 9999px !important;
 }
 
 ::ng-deep .small-button .p-button .pi {
