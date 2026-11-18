@@ -21,11 +21,12 @@ export interface Bailarin {
   id: number;
   nombres: string;
   apellidos: string;
+  fecha_nacimiento?: string | null;
 }
 
 export interface TarjetaCumpleanos {
   id: number;
-  bailarin: Bailarin;
+  bailarin: Bailarin | number;
   bailarin_nombre?: string;
   anio: number;
   imagen?: string;

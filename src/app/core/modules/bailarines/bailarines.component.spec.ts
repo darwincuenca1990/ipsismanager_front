@@ -20,7 +20,16 @@ describe('BailarinesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [BailarinesComponent, NoopAnimationsModule],
       providers: [
-        { provide: BailarinesService, useValue: { listar } },
+        {
+          provide: BailarinesService,
+          useValue: {
+            listar,
+            obtenerGeneros: () => of([
+              { label: 'Femenino', value: 'FEMENINO' },
+              { label: 'Masculino', value: 'MASCULINO' }
+            ])
+          }
+        },
         { provide: CommonsService, useValue: { opcionesElenco: [{ value: 'PLANTA', label: 'Planta' }] } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } }
       ]

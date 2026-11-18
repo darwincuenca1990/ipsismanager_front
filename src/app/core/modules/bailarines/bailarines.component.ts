@@ -8,7 +8,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
-import { Bailarin, BailarinFormValue, BailarinesService, Genero, GrupoFamiliar, Inscripcion } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, BailarinesService, Genero, GrupoFamiliar, Inscripcion, OpcionGenero } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 import { obtenerTodasLasPaginas } from '../../services/paginas-api';
 import { CrearBailarinesComponent } from '../crear-bailarines/crear-bailarines.component';
@@ -30,11 +30,8 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   filtroGenero: Genero | 'TODOS' = 'TODOS';
   primeraFila = 0;
   readonly filasPorPagina = 10;
-  readonly opcionesFiltroGenero: { value: Genero | 'TODOS'; label: string }[] = [
-    { value: 'TODOS', label: 'Todos' },
-    { value: 'FEMENINO', label: 'Femenino' },
-    { value: 'MASCULINO', label: 'Masculino' }
-  ];
+  opcionesGenero: OpcionGenero[] = [];
+  errorGeneros = '';
   cargando = false;
   guardando = false;
   mostrarFormulario = false;
@@ -51,6 +48,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   readonly opcionesFiltroElenco: { value: Elenco | 'TODOS'; label: string }[];
   private solicitudesFoto: Subscription[] = [];
   private solicitudListado?: Subscription;
+  private solicitudGeneros?: Subscription;
 
   constructor(
     private readonly bailarinesService: BailarinesService,
@@ -64,6 +62,10 @@ export class BailarinesComponent implements OnInit, OnDestroy {
     return this.commonsService.opcionesElenco;
   }
 
+  get opcionesFiltroGenero(): { value: Genero | 'TODOS'; label: string }[] {
+    return [{ value: 'TODOS', label: 'Todos' }, ...this.opcionesGenero];
+  }
+
   ngOnInit(): void {
     const estado = this.route.snapshot.queryParamMap.get('estado')?.toUpperCase();
     if (estado === 'ACTIVO' || estado === 'INACTIVO') this.filtroEstado = estado;
@@ -71,6 +73,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
     if (elenco && this.opcionesElenco.some(opcion => opcion.value === elenco)) {
       this.filtroElenco = elenco as Elenco;
     }
+    this.cargarGeneros();
     this.cargarBailarines();
     if (this.route.snapshot.queryParamMap.get('vista') === 'candidatos') this.seleccionarVista('candidatos');
   }
@@ -124,7 +127,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
 
   private cargarFotografiasCandidatos(bailarines: Bailarin[]): void {
     bailarines
-      .filter(b => !!(b.fotografia || b.fotografia_drive_id) && !this.fotoUrlPorId[b.id])
+      .filter(b => !!b.fotografia && !this.fotoUrlPorId[b.id])
       .forEach(b => {
         this.solicitudesFoto.push(this.bailarinesService.obtenerFotografia(b.id).subscribe({
           next: blob => {
@@ -141,7 +144,23 @@ export class BailarinesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.solicitudListado?.unsubscribe();
+    this.solicitudGeneros?.unsubscribe();
     this.limpiarFotografias();
+  }
+
+  private cargarGeneros(): void {
+    this.errorGeneros = '';
+    this.solicitudGeneros = this.bailarinesService.obtenerGeneros().subscribe({
+      next: opciones => {
+        this.opcionesGenero = opciones;
+        if (opciones.length === 0) {
+          this.errorGeneros = 'No hay opciones de género activas configuradas.';
+        }
+      },
+      error: error => {
+        this.errorGeneros = this.mensajeError(error, 'No se pudieron cargar las opciones de género.');
+      }
+    });
   }
 
   get bailarinesFiltrados(): Bailarin[] {
@@ -371,7 +390,7 @@ export class BailarinesComponent implements OnInit, OnDestroy {
   private cargarFotografias(bailarines: Bailarin[]): void {
     this.limpiarFotografias();
     bailarines
-      .filter(bailarin => !!(bailarin.fotografia || bailarin.fotografia_drive_id))
+      .filter(bailarin => !!bailarin.fotografia)
       .forEach(bailarin => {
         const request = this.bailarinesService.obtenerFotografia(bailarin.id).subscribe({
           next: blob => {

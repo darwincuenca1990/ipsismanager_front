@@ -16,6 +16,10 @@
 		</div>
 	</header>
 
+	<div *ngIf="errorGeneros" class="error-message" role="alert">
+		<p-message severity="error" [text]="errorGeneros"></p-message>
+	</div>
+
 	<nav class="view-tabs" role="tablist">
 		<button type="button" role="tab" class="view-tab" [class.active]="vista === 'listado'" [attr.aria-selected]="vista === 'listado'" (click)="seleccionarVista('listado')">
 			<i class="pi pi-users" aria-hidden="true"></i> Listado
@@ -225,6 +229,8 @@
 			[bailarin]="bailarinSeleccionado"
 			[guardando]="guardando"
 			[errorServidor]="errorFormulario"
+			[errorGeneros]="errorGeneros"
+			[opcionesGenero]="opcionesGenero"
 			(guardar)="guardar($event)"
 			(cancelar)="cerrarFormulario()">
 		</app-crear-bailarines>

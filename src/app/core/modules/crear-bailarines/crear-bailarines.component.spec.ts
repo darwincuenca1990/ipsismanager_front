@@ -18,6 +18,10 @@ describe('CrearBailarinesComponent', () => {
     
     fixture = TestBed.createComponent(CrearBailarinesComponent);
     component = fixture.componentInstance;
+    component.opcionesGenero = [
+      { label: 'Masculino', value: 'MASCULINO' },
+      { label: 'Femenino', value: 'FEMENINO' }
+    ];
     fixture.detectChanges();
   });
 

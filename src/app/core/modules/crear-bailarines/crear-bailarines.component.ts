@@ -5,7 +5,7 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { DropdownModule } from 'primeng/dropdown';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Bailarin, BailarinFormValue, Genero, GrupoFamiliar } from '../../services/bailarines.service';
+import { Bailarin, BailarinFormValue, Genero, GrupoFamiliar, OpcionGenero } from '../../services/bailarines.service';
 import { CommonsService, Elenco } from '../../services/commons.service';
 
 @Component({
@@ -19,6 +19,8 @@ export class CrearBailarinesComponent implements OnChanges {
   @Input() bailarin: Bailarin | null = null;
   @Input() guardando = false;
   @Input() errorServidor = '';
+  @Input() errorGeneros = '';
+  @Input() opcionesGenero: OpcionGenero[] = [];
   @Output() guardar = new EventEmitter<BailarinFormValue>();
   @Output() cancelar = new EventEmitter<void>();
 
@@ -28,10 +30,6 @@ export class CrearBailarinesComponent implements OnChanges {
   representanteSeleccionado: 'PAPA' | 'MAMA' | 'OTRO' = 'OTRO';
   readonly fechaMinimaIngreso = '2013-05-13';
   readonly fechaMaxima = this.fechaActual();
-  readonly opcionesGenero: { label: string; value: Genero }[] = [
-    { label: 'Masculino', value: 'MASCULINO' },
-    { label: 'Femenino', value: 'FEMENINO' }
-  ];
   readonly opcionesConvivencia = [
     { label: 'Seleccione', value: '' },
     { label: 'Padres', value: 'PADRES' },

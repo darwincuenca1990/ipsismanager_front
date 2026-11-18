@@ -1,11 +1,13 @@
 import { FormBuilder } from '@angular/forms';
 import { of, Subject, throwError } from 'rxjs';
+import { Bailarin as BailarinDetalle, BailarinesService } from '../../services/bailarines.service';
 import { PlantillasCumpleanosService, TarjetaConPublicaciones, TarjetaCumpleanos } from '../../services/plantillas-cumpleanos.service';
 import { CumpleanosAdministradorComponent } from './cumpleanos-administrador.component';
 
 describe('CumpleanosAdministradorComponent', () => {
   let component: CumpleanosAdministradorComponent;
   let service: jasmine.SpyObj<PlantillasCumpleanosService>;
+  let bailarinesService: jasmine.SpyObj<BailarinesService>;
   const tarjeta: TarjetaCumpleanos = {
     id: 1, bailarin: { id: 1, nombres: 'Ana', apellidos: 'Paz' },
     anio: 2026, mensaje_generado: '', estado_generacion: 'NO_GENERADA',
@@ -21,7 +23,9 @@ describe('CumpleanosAdministradorComponent', () => {
     service.listarTarjetasNoGeneradas.and.returnValue(of([tarjeta]));
     service.listarTarjetasListasParaPublicar.and.returnValue(of([]));
     service.listarTarjetasPublicadas.and.returnValue(of([]));
-    component = new CumpleanosAdministradorComponent(new FormBuilder(), service);
+    bailarinesService = jasmine.createSpyObj('BailarinesService', ['obtenerBailarin']);
+    bailarinesService.obtenerBailarin.and.returnValue(of({ fecha_nacimiento: '2005-04-09' } as BailarinDetalle));
+    component = new CumpleanosAdministradorComponent(new FormBuilder(), service, bailarinesService);
     component.ngOnInit();
   });
 
@@ -73,6 +77,11 @@ describe('CumpleanosAdministradorComponent', () => {
     component.cargarTarjetas();
     expect(component.cargando).toBeFalse();
     expect(component.error).toContain('No se pudieron cargar las tarjetas listas para publicar');
+  });
+
+  it('muestra la fecha de nacimiento como DD/MM/YYYY en las tarjetas', () => {
+    expect(component.fechaCumpleanos(component.tarjetasNoGeneradas[0])).toBe('09/04/2005');
+    expect(bailarinesService.obtenerBailarin).toHaveBeenCalledWith(1);
   });
 
   it('deshabilita el formulario durante la solicitud y muestra el detalle del error para reintentar', () => {

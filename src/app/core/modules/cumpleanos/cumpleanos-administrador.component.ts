@@ -11,11 +11,13 @@ import {
   PlantillasCumpleanosService,
   PublicacionDetalle
 } from '../../services/plantillas-cumpleanos.service';
+import { BailarinesService } from '../../services/bailarines.service';
 
 interface TarjetaAdmin extends TarjetaCumpleanos {
   publicaciones?: any[];
   cargandoGeneracion?: boolean;
   cargandoPublicacion?: boolean;
+  fecha_nacimiento_bailarin?: string | null;
 }
 
 interface ResultadoDetector {
@@ -75,6 +77,7 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
   private solicitudNoGeneradas?: Subscription;
   private solicitudAprobadas?: Subscription;
   private solicitudPublicadas?: Subscription;
+  private solicitudesFechasNacimiento: Subscription[] = [];
 
   readonly plataformas: { value: PlataformaRedSocial; label: string }[] = [
     { value: 'FACEBOOK', label: 'Facebook' },
@@ -93,7 +96,8 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly cumpleanosService: PlantillasCumpleanosService
+    private readonly cumpleanosService: PlantillasCumpleanosService,
+    private readonly bailarinesService: BailarinesService
   ) {}
 
   ngOnInit(): void {
@@ -105,11 +109,13 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
     this.solicitudNoGeneradas?.unsubscribe();
     this.solicitudAprobadas?.unsubscribe();
     this.solicitudPublicadas?.unsubscribe();
+    this.limpiarSolicitudesFechasNacimiento();
   }
 
   cargarTarjetas(): void {
     this.solicitudNoGeneradas?.unsubscribe();
     this.solicitudAprobadas?.unsubscribe();
+    this.limpiarSolicitudesFechasNacimiento();
     this.cargando = true;
     this.error = '';
     this.cargarTarjetasPublicadas();
@@ -122,6 +128,7 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
           cargandoGeneracion: false, 
           cargandoPublicacion: false 
         }));
+        this.cargarFechasNacimiento(this.tarjetasNoGeneradas);
       },
       error: error => {
         this.error = this.mensajeError(error, 'No se pudieron cargar las tarjetas no generadas.');
@@ -169,6 +176,59 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
     return tarjeta?.bailarin_nombre || `Tarjeta #${id}`;
   }
 
+  nombreBailarin(tarjeta: TarjetaCumpleanos): string {
+    if (tarjeta.bailarin_nombre) return tarjeta.bailarin_nombre;
+    if (typeof tarjeta.bailarin === 'number') return `Bailarín #${tarjeta.bailarin}`;
+    return `${tarjeta.bailarin.nombres} ${tarjeta.bailarin.apellidos}`.trim();
+  }
+
+  fechaCumpleanos(tarjeta: TarjetaAdmin): string {
+    const bailarin = typeof tarjeta.bailarin === 'number' ? null : tarjeta.bailarin;
+    const fecha = tarjeta.fecha_nacimiento_bailarin ?? bailarin?.fecha_nacimiento;
+    if (!fecha) return 'Fecha no disponible';
+
+    const [anio, mes, dia] = fecha.slice(0, 10).split('-');
+    if (!anio || !mes || !dia || ![anio, mes, dia].every(parte => /^\d+$/.test(parte))) {
+      return 'Fecha no disponible';
+    }
+    return `${dia}/${mes}/${anio}`;
+  }
+
+  private cargarFechasNacimiento(tarjetas: TarjetaAdmin[]): void {
+    tarjetas.forEach(tarjeta => {
+      const bailarin = typeof tarjeta.bailarin === 'number' ? null : tarjeta.bailarin;
+      if (bailarin?.fecha_nacimiento) {
+        tarjeta.fecha_nacimiento_bailarin = bailarin.fecha_nacimiento;
+        return;
+      }
+
+      const bailarinId = typeof tarjeta.bailarin === 'number'
+        ? tarjeta.bailarin
+        : bailarin?.id;
+      if (!bailarinId) {
+        this.error = 'No se pudo identificar al bailarín para consultar su fecha de nacimiento.';
+        return;
+      }
+
+      this.solicitudesFechasNacimiento.push(
+        this.bailarinesService.obtenerBailarin(bailarinId).subscribe({
+          next: bailarín => tarjeta.fecha_nacimiento_bailarin = bailarín.fecha_nacimiento,
+          error: error => {
+            this.error = this.mensajeError(
+              error,
+              `No se pudo cargar la fecha de nacimiento del bailarín ${this.nombreBailarin(tarjeta)}.`
+            );
+          }
+        })
+      );
+    });
+  }
+
+  private limpiarSolicitudesFechasNacimiento(): void {
+    this.solicitudesFechasNacimiento.forEach(solicitud => solicitud.unsubscribe());
+    this.solicitudesFechasNacimiento = [];
+  }
+
   private cargarTarjetasPublicadas(): void {
     this.solicitudPublicadas?.unsubscribe();
     this.cargandoPublicadas = true;
@@ -190,6 +250,7 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
           cargandoGeneracion: false, 
           cargandoPublicacion: false 
         }));
+        this.cargarFechasNacimiento(this.tarjetasAprobadas);
       },
       error: error => {
         this.error = this.mensajeError(error, 'No se pudieron cargar las tarjetas listas para publicar.');
@@ -380,7 +441,7 @@ export class CumpleanosAdministradorComponent implements OnInit, OnDestroy {
   }
 
   obtenerTextoPublicacionDefault(tarjeta: TarjetaAdmin): string {
-    return `¡Feliz cumpleaños ${tarjeta.bailarin.nombres} ${tarjeta.bailarin.apellidos}! 🎉`;
+    return `¡Feliz cumpleaños ${this.nombreBailarin(tarjeta)}! 🎉`;
   }
 
   descargarTarjeta(url: string): void {

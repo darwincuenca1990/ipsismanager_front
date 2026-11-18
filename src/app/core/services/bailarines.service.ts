@@ -28,7 +28,18 @@ export interface Inscripcion {
   fecha_salida: string | null;
 }
 
-export type Genero = 'MASCULINO' | 'FEMENINO';
+export type Genero = string;
+
+export interface OpcionGenero {
+  label: string;
+  value: Genero;
+}
+
+interface ParametroGeneroResponse {
+  nombre: string;
+  valor: string;
+  estado: string;
+}
 
 export interface Bailarin {
   id: number;
@@ -53,7 +64,6 @@ export interface Bailarin {
   detalle_enfermedad: string;
   correo: string;
   fotografia?: string | null;
-  fotografia_drive_id?: string | null;
   autorizado_publicacion: boolean;
   fecha_autorizacion_publicacion?: string | null;
   inscripcion?: Inscripcion;
@@ -128,8 +138,25 @@ export class BailarinesService {
     return this.http.get(`${this.apiUrl}${path}`, { responseType: 'blob' });
   }
 
+  obtenerGeneros(): Observable<OpcionGenero[]> {
+    return this.http.get<ParametroGeneroResponse>(
+      `${this.apiUrl}/parametros/por-nombre/GENERO`
+    ).pipe(
+      map(response => response.estado === 'ACTIVO'
+        ? response.valor.split(',')
+          .map(label => label.trim())
+          .filter(Boolean)
+          .map(label => ({ label, value: label.toUpperCase() }))
+        : [])
+    );
+  }
+
   obtenerGrupo(id: number): Observable<GrupoFamiliar> {
     return this.http.get<GrupoFamiliar>(`${this.apiUrl}/grupos-familiares/${id}/`);
+  }
+
+  obtenerBailarin(id: number): Observable<Bailarin> {
+    return this.http.get<Bailarin>(`${this.apiUrl}/bailarines/${id}/`);
   }
 
   crear(value: BailarinFormValue): Observable<any> {
