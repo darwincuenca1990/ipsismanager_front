@@ -1,7 +1,10 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dancer-form">
-	<div *ngIf="errorServidor || errorGeneros || (enviado && form.invalid)" class="form-errors" role="alert" aria-live="assertive">
+	<div *ngIf="errorServidor || errorGeneros || errorElencos || errorConvivencia || errorEstado || (enviado && form.invalid)" class="form-errors" role="alert" aria-live="assertive">
 		<p-message *ngIf="errorServidor" severity="error" [text]="errorServidor"></p-message>
 		<p-message *ngIf="errorGeneros" severity="error" [text]="errorGeneros"></p-message>
+		<p-message *ngIf="errorElencos" severity="error" [text]="errorElencos"></p-message>
+		<p-message *ngIf="errorConvivencia" severity="error" [text]="errorConvivencia"></p-message>
+		<p-message *ngIf="errorEstado" severity="error" [text]="errorEstado"></p-message>
 		<ng-container *ngIf="enviado">
 			<p-message *ngFor="let error of erroresValidacion" severity="error" [text]="error"></p-message>
 		</ng-container>

@@ -6,7 +6,7 @@ import type { EChartsOption } from 'echarts';
 import { DropdownModule } from 'primeng/dropdown';
 import { MessageModule } from 'primeng/message';
 import { forkJoin, Subscription } from 'rxjs';
-import { Bailarin, BailarinesService } from '../../services/bailarines.service';
+import { Bailarin, BailarinesService, OpcionElenco } from '../../services/bailarines.service';
 import { Coreografia, CoreografiasService } from '../../services/coreografias.service';
 import { Presentacion, PresentacionesService, ReporteAnualPresentaciones, ReporteMensualPresentaciones, ResumenReportePresentaciones } from '../../services/presentaciones.service';
 import { GraficoComparativaComponent } from './grafico-comparativa.component';
@@ -49,6 +49,7 @@ export class ComparativasComponent implements OnInit, OnDestroy {
   detalle: Presentacion | null = null;
   bailarinesDetalle: Bailarin[] = [];
   coreografiasDetalle: Coreografia[] = [];
+  opcionesElencoDetalle: OpcionElenco[] = [];
   cargandoDetalle = false;
   errorDetalle = '';
   private idDetalle?: number;
@@ -86,11 +87,13 @@ export class ComparativasComponent implements OnInit, OnDestroy {
     this.cargandoDetalle = true;
     this.solicitudDetalle = forkJoin({
       presentacion: this.servicio.obtener(id),
-      catalogos: cargarCatalogosPresentacion(this.bailarinesService, this.coreografiasService)
+      catalogos: cargarCatalogosPresentacion(this.bailarinesService, this.coreografiasService),
+      elencos: this.bailarinesService.obtenerElencos()
     }).subscribe({
-      next: ({ presentacion, catalogos }) => {
+      next: ({ presentacion, catalogos, elencos }) => {
         this.bailarinesDetalle = combinarBailarines(catalogos.inactivos, catalogos.activos);
         this.coreografiasDetalle = catalogos.coreografias;
+        this.opcionesElencoDetalle = elencos;
         this.detalle = presentacion;
         this.cargandoDetalle = false;
       },

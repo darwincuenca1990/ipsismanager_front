@@ -53,4 +53,171 @@ describe('BailarinesService', () => {
 
     expect(opciones).toEqual([]);
   });
+
+  it('obtiene elencos separados por coma y asigna solo valores activos', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerElencos().subscribe(resultado => opciones = resultado);
+
+    const request = http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/ELENCO`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 10,
+      nombre: 'ELENCO',
+      valor: 'INFANTIL, PLANTA, MÁSTER, ASPIRANTE INFANTIL, ASPIRANTE PLANTA, ASPIRANTE MÁSTER',
+      estado: 'ACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([
+      { label: 'Infantil', value: 'INFANTIL' },
+      { label: 'Planta', value: 'PLANTA' },
+      { label: 'Máster', value: 'MÁSTER' },
+      { label: 'Aspirante Infantil', value: 'ASPIRANTE INFANTIL' },
+      { label: 'Aspirante Planta', value: 'ASPIRANTE PLANTA' },
+      { label: 'Aspirante Máster', value: 'ASPIRANTE MÁSTER' }
+    ]);
+  });
+
+  it('no asigna elencos cuando el parámetro está inactivo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerElencos().subscribe(resultado => opciones = resultado);
+
+    http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/ELENCO`
+    ).flush({
+      id: 10,
+      nombre: 'ELENCO',
+      valor: 'Infantil, Planta',
+      estado: 'INACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([]);
+  });
+
+  it('obtiene elencos de presentación desde el parámetro activo correspondiente', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerElencosPresentacion().subscribe(resultado => opciones = resultado);
+
+    const request = http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/ELENCOS_PRESENTACION`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 15,
+      nombre: 'ELENCOS_PRESENTACION',
+      valor: 'Infantil, Planta, Máster',
+      estado: ' ACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([
+      { label: 'Infantil', value: 'INFANTIL' },
+      { label: 'Planta', value: 'PLANTA' },
+      { label: 'Máster', value: 'MÁSTER' }
+    ]);
+  });
+
+  it('obtiene opciones de convivencia de un parámetro activo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerOpcionesConvivencia().subscribe(resultado => opciones = resultado);
+
+    const request = http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/CONVIVE_CON`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 11,
+      nombre: 'CONVIVE_CON',
+      valor: 'PADRES, FAMILIARES, OTROS',
+      estado: 'ACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([
+      { label: 'Padres', value: 'PADRES' },
+      { label: 'Familiares', value: 'FAMILIARES' },
+      { label: 'Otros', value: 'OTROS' }
+    ]);
+  });
+
+  it('no asigna opciones de convivencia cuando el parámetro está inactivo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerOpcionesConvivencia().subscribe(resultado => opciones = resultado);
+
+    http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/CONVIVE_CON`
+    ).flush({
+      id: 11,
+      nombre: 'CONVIVE_CON',
+      valor: 'PADRES, FAMILIARES, OTROS',
+      estado: 'INACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([]);
+  });
+
+  it('obtiene opciones de estado de un parámetro activo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerEstados().subscribe(resultado => opciones = resultado);
+
+    const request = http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/ESTADO`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 12,
+      nombre: 'ESTADO',
+      valor: 'ACTIVO, INACTIVO',
+      estado: 'ACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([
+      { label: 'Activo', value: 'ACTIVO' },
+      { label: 'Inactivo', value: 'INACTIVO' }
+    ]);
+  });
+
+  it('no asigna opciones de estado cuando el parámetro está inactivo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerEstados().subscribe(resultado => opciones = resultado);
+
+    http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/ESTADO`
+    ).flush({
+      id: 12,
+      nombre: 'ESTADO',
+      valor: 'ACTIVO, INACTIVO',
+      estado: 'INACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([]);
+  });
+
+  it('obtiene opciones de tipo de presentación del parámetro activo', () => {
+    let opciones: { label: string; value: string }[] | undefined;
+    service.obtenerOpcionesParametro('TIPOS_PRESENTACION').subscribe(resultado => opciones = resultado);
+
+    const request = http.expectOne(
+      `${constants.SERVICES.INDICADOR_ALOJAMIENTO_WS.CONTEXT}/parametros/por-nombre/TIPOS_PRESENTACION`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 14,
+      nombre: 'TIPOS_PRESENTACION',
+      valor: 'Un elenco, Festival Ipsis',
+      estado: 'ACTIVO',
+      fecha_registro: '2026-11-12T16:05:53.246396Z'
+    });
+
+    expect(opciones).toEqual([
+      { label: 'Un Elenco', value: 'UN ELENCO' },
+      { label: 'Festival Ipsis', value: 'FESTIVAL IPSIS' }
+    ]);
+  });
 });

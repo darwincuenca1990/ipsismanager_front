@@ -37,8 +37,22 @@ describe('PresentacionesComponent', () => {
     service.obtener.and.returnValue(of(presentacion));
     service.crear.and.returnValue(of(presentacion));
     service.actualizar.and.returnValue(of(presentacion));
-    bailarinesService = jasmine.createSpyObj('BailarinesService', ['listar']);
+    bailarinesService = jasmine.createSpyObj('BailarinesService', [
+      'listar', 'obtenerElencosPresentacion', 'obtenerOpcionesParametro'
+    ]);
     bailarinesService.listar.and.callFake(filtros => of(filtros.estado === 'ACTIVO' ? bailarines : []));
+    bailarinesService.obtenerElencosPresentacion.and.returnValue(of([
+      { label: 'Infantil', value: 'INFANTIL' },
+      { label: 'Planta', value: 'PLANTA' },
+      { label: 'Máster', value: 'MÁSTER' },
+      { label: 'Aspirante Infantil', value: 'ASPIRANTE INFANTIL' },
+      { label: 'Aspirante Planta', value: 'ASPIRANTE PLANTA' },
+      { label: 'Aspirante Máster', value: 'ASPIRANTE MÁSTER' }
+    ]));
+    bailarinesService.obtenerOpcionesParametro.and.returnValue(of([
+        { label: 'Un Elenco', value: 'UN ELENCO' },
+      { label: 'Festival Ipsis', value: 'FESTIVAL IPSIS' }
+    ]));
     const coreografiasService = jasmine.createSpyObj('CoreografiasService', ['listar']);
     coreografiasService.listar.and.returnValue(of([
       { id: 10, nombre: 'Danza', region: 'Sierra', descripcion: 'Texto', url_video: 'https://example.com' },
@@ -66,6 +80,37 @@ describe('PresentacionesComponent', () => {
     component.seleccionarElenco('MÁSTER', true);
     expect(component.bailarinesVisibles.map(b => b.id)).toEqual([2, 1, 3]);
     expect(component.personasCargo.map(b => b.id)).toEqual([3, 1]);
+  });
+
+  it('carga tipos de presentación activos y conserva los valores requeridos por el API', () => {
+    expect(bailarinesService.obtenerOpcionesParametro).toHaveBeenCalledWith('TIPOS_PRESENTACION');
+    expect(bailarinesService.obtenerElencosPresentacion).toHaveBeenCalled();
+    expect(component.opcionesTipoPresentacion).toEqual([
+      { label: 'Un elenco', value: 'UN ELENCO' },
+      { label: 'Festival Ipsis', value: 'FESTIVALIPSIS' }
+    ]);
+    expect(component.form.controls.tipo_presentacion.value).toBe('UN ELENCO');
+  });
+
+  it('impide crear presentaciones cuando no hay elencos activos', () => {
+    bailarinesService.obtenerElencosPresentacion.and.returnValue(of([]));
+    component.cargarCatalogos();
+    fixture.detectChanges();
+
+    expect(component.errorCatalogos).toBe('No hay elencos de presentación activos configurados.');
+    const boton: HTMLButtonElement = fixture.nativeElement.querySelector('.page-heading button');
+    expect(boton.disabled).toBeTrue();
+
+    component.nuevo();
+    component.form.patchValue({
+      fecha: '2026-11-11', hora_presentacion: '10:00', lugar: 'Loja', persona_cargo: '1',
+      costo_total_presentacion: '200.25', costo_transporte: '50.10', nombre_transporte: 'Bus'
+    });
+    component.elencos = ['PLANTA'];
+    component.guardar();
+
+    expect(component.errorFormulario).toBe('No hay elencos de presentación activos configurados.');
+    expect(service.crear).not.toHaveBeenCalled();
   });
 
   it('inicia con mes y año actuales y ofrece los rangos de selección solicitados', fakeAsync(() => {

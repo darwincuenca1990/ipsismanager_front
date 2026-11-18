@@ -22,6 +22,23 @@ describe('CrearBailarinesComponent', () => {
       { label: 'Masculino', value: 'MASCULINO' },
       { label: 'Femenino', value: 'FEMENINO' }
     ];
+    component.opcionesElenco = [
+      { label: 'Infantil', value: 'INFANTIL' },
+      { label: 'Planta', value: 'PLANTA' },
+      { label: 'Máster', value: 'MÁSTER' },
+      { label: 'Aspirante Infantil', value: 'ASPIRANTE INFANTIL' },
+      { label: 'Aspirante Planta', value: 'ASPIRANTE PLANTA' },
+      { label: 'Aspirante Máster', value: 'ASPIRANTE MÁSTER' }
+    ];
+    component.opcionesConvivenciaCatalogo = [
+      { label: 'Padres', value: 'PADRES' },
+      { label: 'Familiares', value: 'FAMILIARES' },
+      { label: 'Otros', value: 'OTROS' }
+    ];
+    component.opcionesEstado = [
+      { label: 'Activo', value: 'ACTIVO' },
+      { label: 'Inactivo', value: 'INACTIVO' }
+    ];
     fixture.detectChanges();
   });
 

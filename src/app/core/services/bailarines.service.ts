@@ -30,12 +30,17 @@ export interface Inscripcion {
 
 export type Genero = string;
 
-export interface OpcionGenero {
+export interface OpcionParametro {
   label: string;
-  value: Genero;
+  value: string;
 }
 
-interface ParametroGeneroResponse {
+export type OpcionGenero = OpcionParametro;
+export type OpcionElenco = OpcionParametro;
+export type OpcionConvivencia = OpcionParametro;
+export type OpcionEstado = OpcionParametro;
+
+interface ParametroResponse {
   nombre: string;
   valor: string;
   estado: string;
@@ -55,7 +60,7 @@ export interface Bailarin {
   lugar_trabajo: string;
   direccion_domicilio: string;
   referencia_domicilio: string;
-  vive_con: 'PADRES' | 'FAMILIARES' | 'OTROS' | '';
+  vive_con: string;
   fecha_nacimiento: string;
   elenco: Elenco;
   lugar_nacimiento: string;
@@ -139,15 +144,48 @@ export class BailarinesService {
   }
 
   obtenerGeneros(): Observable<OpcionGenero[]> {
-    return this.http.get<ParametroGeneroResponse>(
-      `${this.apiUrl}/parametros/por-nombre/GENERO`
+    return this.obtenerOpcionesParametro('GENERO');
+  }
+
+  obtenerElencos(): Observable<OpcionElenco[]> {
+    return this.obtenerOpcionesParametro('ELENCO');
+  }
+
+  obtenerElencosPresentacion(): Observable<OpcionElenco[]> {
+    return this.obtenerOpcionesParametro('ELENCOS_PRESENTACION');
+  }
+
+  obtenerOpcionesConvivencia(): Observable<OpcionConvivencia[]> {
+    return this.obtenerOpcionesParametro('CONVIVE_CON');
+  }
+
+  obtenerEstados(): Observable<OpcionEstado[]> {
+    return this.obtenerOpcionesParametro('ESTADO');
+  }
+
+  obtenerOpcionesParametro(nombre: string): Observable<OpcionParametro[]> {
+    return this.http.get<ParametroResponse>(
+      `${this.apiUrl}/parametros/por-nombre/${nombre}`
     ).pipe(
-      map(response => response.estado === 'ACTIVO'
-        ? response.valor.split(',')
+      map(response => {
+        if (response.estado.trim() !== 'ACTIVO') return [];
+        if (typeof response.valor !== 'string') {
+          throw new Error(`El parámetro ${nombre} no contiene una lista de valores válida.`);
+        }
+        const opciones = response.valor.split(',')
           .map(label => label.trim())
           .filter(Boolean)
-          .map(label => ({ label, value: label.toUpperCase() }))
-        : [])
+          .map(label => ({
+            label: label.split(/\s+/)
+              .map(palabra => `${palabra.charAt(0).toLocaleUpperCase('es')}${palabra.slice(1).toLocaleLowerCase('es')}`)
+              .join(' '),
+            value: label.toLocaleUpperCase('es')
+          }));
+        if (opciones.length === 0) {
+          throw new Error(`El parámetro ${nombre} no tiene valores configurados.`);
+        }
+        return opciones;
+      })
     );
   }
 

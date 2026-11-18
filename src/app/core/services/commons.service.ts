@@ -1,12 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type Elenco =
-  | 'INFANTIL'
-  | 'PLANTA'
-  | 'MÁSTER'
-  | 'ASPIRANTE INFANTIL'
-  | 'ASPIRANTE PLANTA'
-  | 'ASPIRANTE MÁSTER';
+export type Elenco = string;
 
 @Injectable({
   providedIn: 'root'
@@ -14,15 +8,6 @@ export type Elenco =
 export class CommonsService {
 
    meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-  readonly opcionesElenco: { value: Elenco; label: string }[] = [
-    { value: 'INFANTIL', label: 'Infantil' },
-    { value: 'PLANTA', label: 'Planta' },
-    { value: 'MÁSTER', label: 'Máster' },
-    { value: 'ASPIRANTE INFANTIL', label: 'Aspirante Infantil' },
-    { value: 'ASPIRANTE PLANTA', label: 'Aspirante Planta' },
-    { value: 'ASPIRANTE MÁSTER', label: 'Aspirante Máster' }
-  ];
 
   constructor() { }
 

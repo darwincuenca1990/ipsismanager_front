@@ -40,7 +40,12 @@ describe('ComparativasComponent', () => {
     service.reporteMensual.and.returnValue(of(mensual));
     service.reporteAnual.and.returnValue(of(anual));
     service.obtener.and.returnValue(of(presentacion));
-    const bailarines = jasmine.createSpyObj('BailarinesService', ['listar']);
+    const bailarines = jasmine.createSpyObj('BailarinesService', ['listar', 'obtenerElencos']);
+    bailarines.obtenerElencos.and.returnValue(of([
+      { label: 'Infantil', value: 'INFANTIL' },
+      { label: 'Planta', value: 'PLANTA' },
+      { label: 'Máster', value: 'MÁSTER' }
+    ]));
     bailarines.listar.and.callFake((filtros: Parameters<BailarinesService['listar']>[0]) => of(
       filtros.estado === 'ACTIVO'
         ? [
